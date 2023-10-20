@@ -1,8 +1,12 @@
 package apio
 
-import "testing"
+import (
+	"fmt"
+	"reflect"
+	"testing"
+)
 
-type ExamplePath struct {
+type UserSettingPath struct {
 	_          any `path:"/users"`
 	collection int
 	_          any `path:"/settings"`
@@ -10,6 +14,8 @@ type ExamplePath struct {
 	value      string
 } // forms "/users/:collection/settings/:category/:value"
 
-func TestFakeMain(t *testing.T) {
+func TestGetUserSetting(t *testing.T) {
+	input := EndpointInput[NoHeaders, UserSettingPath, NoQuery, NoBody]{}
 
+	fmt.Printf("input: %v\n", reflect.TypeOf(input))
 }

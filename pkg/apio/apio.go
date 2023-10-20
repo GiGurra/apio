@@ -9,12 +9,22 @@ type EndpointBase interface {
 }
 
 type EndpointInput[
-	HeaderType any,
-	PathType any,
-	QueryType any,
-	BodyType any,
+	Headers any,
+	Path any,
+	Query any,
+	Body any,
 ] struct {
 }
+
+type Empty struct{}
+
+type NoHeaders struct{}
+
+type NoPath struct{}
+
+type NoQuery struct{}
+
+type NoBody struct{}
 
 type EndpointOutput[
 	HeaderType any,
