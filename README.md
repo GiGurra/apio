@@ -168,7 +168,7 @@ func main() {
 		X{}, // No body sent (this is a GET call)
 	)
 
-	res, err := GetEndpointSpec.Call(server, input)
+	res, err := GetEndpointSpec.Call(server, input) // Won't compile if types don't match
 	if err != nil {
 		panic(err)
 	}
