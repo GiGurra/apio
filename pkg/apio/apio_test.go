@@ -7,9 +7,9 @@ import (
 
 // represents "/users/:user/settings/:settingCat/:settingId"
 type UserSettingPath struct {
-	_          any `path:"users"`
+	_          any `path:"/users"`
 	user       int
-	_          any `path:"settings"`
+	_          any `path:"/settings"`
 	settingCat string
 	settingId  string
 }

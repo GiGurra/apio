@@ -3,6 +3,7 @@ package apio
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type Payload interface {
@@ -68,7 +69,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPathPatter
 				result += "/*"
 			} else {
 				// Treat as literal
-				result += "/" + pathTag
+				result += "/" + strings.TrimPrefix(pathTag, "/")
 			}
 		} else {
 			if alreadyTaken[field.Name] {
