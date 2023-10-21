@@ -97,6 +97,11 @@ type EndpointOutput[
 ////////////////////////////////////////////////////////////////////////////////////
 ///// PUBLIC HELPER TYPES (responses)
 
+func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, error)) Endpoint[Input, Output] {
+	e.Handler = handler
+	return e
+}
+
 type X struct{}
 
 func EmptyResponse() EndpointOutput[X, X] {

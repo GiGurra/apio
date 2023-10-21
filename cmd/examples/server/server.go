@@ -36,16 +36,22 @@ type OutputHeaders struct {
 	ContentType string `name:"Content-Type"`
 }
 
+var getEndpointSpec = Endpoint[
+	EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
+	EndpointOutput[X, UserSetting],
+]{Method: http.MethodGet}
+
+var postEndpointSpec = Endpoint[
+	EndpointInput[X, UserSettingPath, X, UserSetting],
+	EndpointOutput[OutputHeaders, X],
+]{Method: http.MethodPost}
+
 func UserSettingEndpoints() []EndpointBase {
 
 	return []EndpointBase{
 
-		Endpoint[
-			EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
-			EndpointOutput[X, UserSetting],
-		]{
-			Method: http.MethodGet,
-			Handler: func(
+		getEndpointSpec.
+			WithHandler(func(
 				input EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
 			) (EndpointOutput[X, UserSetting], error) {
 				fmt.Printf("invoked GET path with input: %+v\n", input)
@@ -53,23 +59,16 @@ func UserSettingEndpoints() []EndpointBase {
 					Value: "testValue",
 					Type:  fmt.Sprintf("input=%+v", input),
 				}), nil
-			},
-		},
+			}),
 
-		Endpoint[
-			EndpointInput[X, UserSettingPath, X, UserSetting],
-			EndpointOutput[OutputHeaders, X],
-		]{
-			Method: http.MethodPut,
-			Handler: func(
-				input EndpointInput[X, UserSettingPath, X, UserSetting],
-			) (EndpointOutput[OutputHeaders, X], error) {
-				fmt.Printf("invoked PUT path with input: %+v\n", input)
-				return HeadersResponse(OutputHeaders{
-					ContentType: "application/json",
-				}), nil
-			},
-		},
+		postEndpointSpec.WithHandler(func(
+			input EndpointInput[X, UserSettingPath, X, UserSetting],
+		) (EndpointOutput[OutputHeaders, X], error) {
+			fmt.Printf("invoked PUT path with input: %+v\n", input)
+			return HeadersResponse(OutputHeaders{
+				ContentType: "application/json",
+			}), nil
+		}),
 	}
 }
 
