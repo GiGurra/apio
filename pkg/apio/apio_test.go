@@ -1,6 +1,7 @@
 package apio
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"testing"
 )
@@ -8,10 +9,10 @@ import (
 // represents "/users/:user/settings/:settingCat/:settingId"
 type UserSettingPath struct {
 	_          any `path:"/users"`
-	user       int
+	User       int
 	_          any `path:"/settings"`
-	settingCat string
-	settingId  string
+	SettingCat string
+	SettingId  string
 }
 
 type UserSetting struct {
@@ -69,10 +70,13 @@ func TestGetUserSetting(t *testing.T) {
 
 	server := echo.New()
 
+	// add recovery middleware
+	//server.Use(middleware.Recover())
+
 	EchoInstall(server, &api)
-	//
-	//err := server.Start(":8080")
-	//if err != nil {
-	//	t.Fatal(fmt.Errorf("failed to start server: %w", err))
-	//}
+
+	err := server.Start(":8080")
+	if err != nil {
+		t.Fatal(fmt.Errorf("failed to start server: %w", err))
+	}
 }

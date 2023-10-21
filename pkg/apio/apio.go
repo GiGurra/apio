@@ -65,7 +65,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) Parse(
 		if !ok {
 			return result, fmt.Errorf("missing path parameter '%s'", name)
 		}
-		valueToSet := reflect.ValueOf(result.Path).Elem().FieldByName(name)
+		valueToSet := reflect.ValueOf(&result.Path).Elem().FieldByName(name)
 		err := setter(valueToSet, inputValue)
 		if err != nil {
 			return result, fmt.Errorf("failed to set path parameter '%s': %w", name, err)
