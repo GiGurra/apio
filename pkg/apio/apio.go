@@ -9,42 +9,82 @@ type EndpointBase interface {
 }
 
 type EndpointInput[
-	Headers any,
-	Path any,
-	Query any,
-	Body any,
-] struct {
-}
-
-type Empty struct{}
-
-type NoHeaders struct{}
-
-type NoPath struct{}
-
-type NoQuery struct{}
-
-type NoBody struct{}
-
-type EndpointOutput[
-	HeaderType any,
+	HeadersType any,
 	PathType any,
 	QueryType any,
 	BodyType any,
 ] struct {
+	Headers HeadersType
+	Path    PathType
+	Query   QueryType
+	Body    BodyType
+}
+
+type X any
+
+type EndpointOutput[
+	HeadersType any,
+	BodyType any,
+] struct {
+	Code    int
+	Headers HeadersType
+	Body    BodyType
+}
+
+func EmptyResponse() EndpointOutput[X, X] {
+	return EndpointOutput[X, X]{}
+}
+
+func Response[H any, B any](headers H, body B) EndpointOutput[H, B] {
+	return EndpointOutput[H, B]{
+		Code:    200,
+		Headers: headers,
+		Body:    body,
+	}
+}
+
+func BodyResponse[BodyType any](body BodyType) EndpointOutput[X, BodyType] {
+	return EndpointOutput[X, BodyType]{
+		Code: 200,
+		Body: body,
+	}
+}
+
+func HeadersResponse[H any](headers H) EndpointOutput[H, X] {
+	return EndpointOutput[H, X]{
+		Code:    204,
+		Headers: headers,
+	}
 }
 
 type Endpoint[Input, Output any] struct {
-	Method string
-	Path   string
+	Method  string
+	Handler func(Input) (Output, *Error)
+	path    string
 }
 
-func (e *Endpoint[Input, Output]) GetMethod() string {
+func (e Endpoint[Input, Output]) WithMethod(method string) Endpoint[Input, Output] {
+	e.Method = method
+	return e
+}
+
+func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, *Error)) Endpoint[Input, Output] {
+	e.Handler = handler
+	return e
+}
+
+func (e Endpoint[Input, Output]) Build() Endpoint[Input, Output] {
+	e.path = "" // TODO build path
+	return e
+}
+
+func (e Endpoint[Input, Output]) GetMethod() string {
 	return e.Method
 }
 
-func (e *Endpoint[Input, Output]) GetPath() string {
-	return e.Path
+func (e Endpoint[Input, Output]) GetPath() string {
+	// TODO flatten path
+	return e.path
 }
 
 type Server struct {
@@ -52,9 +92,22 @@ type Server struct {
 	Host     string
 	Port     int
 	BasePath string
+	HttpVer  string
 }
 
 type Api struct {
-	Servers   []Server
-	Endpoints []EndpointBase
+	Published   []Server
+	IntBasePath string
+	Endpoints   []EndpointBase
+}
+
+func (a Api) AddEndpoints(endpoint ...EndpointBase) Api {
+	a.Endpoints = append(a.Endpoints, endpoint...)
+	return a
+}
+
+type Error struct {
+	Code     int
+	Message  string
+	LocalErr error
 }
