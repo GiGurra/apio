@@ -15,14 +15,14 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 
 		path := func() string {
 			if api.IntBasePath == "" {
-				return endpoint.GetPath()
+				return endpoint.getPath()
 			} else {
-				return api.IntBasePath + "/" + strings.TrimPrefix(endpoint.GetPath(), "/")
+				return api.IntBasePath + "/" + strings.TrimPrefix(endpoint.getPath(), "/")
 			}
 		}()
 
-		fmt.Printf("%s %s\n", endpoint.GetMethod(), path)
-		echoServer.Add(endpoint.GetMethod(), path, func(ctx echo.Context) error {
+		fmt.Printf("%s %s\n", endpoint.getMethod(), path)
+		echoServer.Add(endpoint.getMethod(), path, func(ctx echo.Context) error {
 
 			headers := map[string][]string{}
 			for k, v := range ctx.Request().Header {
@@ -55,7 +55,7 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				return fmt.Errorf("error reading body: %v", err)
 			}
 
-			result, err := endpoint.Invoke(Payload{
+			result, err := endpoint.invoke(inputPayload{
 				Headers: headers,
 				Path:    path,
 				Query:   query,
