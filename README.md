@@ -168,9 +168,9 @@ func main() {
 		Empty, // No body sent (this is a GET call)
 	)
 
-	res, err := GetEndpointSpec.Call(server, input) // Won't compile if types don't match
+	res, err := GetEndpointSpec.RPC(server, input, DefaultOpts())
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("failed to call RPC GET endpoint: %v", err))
 	}
 
 	fmt.Printf("res: %+v\n", res)
