@@ -42,4 +42,4 @@ var Get = Endpoint[
 var Put = Endpoint[
 	EndpointInput[X, Path, X, Body],
 	EndpointOutput[RespHeaders, X],
-]{Method: http.MethodPost}
+]{Method: http.MethodPut}
