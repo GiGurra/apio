@@ -58,7 +58,38 @@ func (e EndpointOutput[HeadersType, BodyType]) SetHeaders(hdrs map[string][]stri
 	}
 
 	// Check that all headers are present
-	fmt.Printf("WARNING: NOT YET implemented: Headers ignored\n")
+	for k, vs := range hdrs {
+		for _, v := range vs {
+			for i := 0; i < headersType.NumField(); i++ {
+				field := headersType.Field(i)
+				if field.Name != "_" {
+					name := field.Name
+					if nameOvrd, ok := field.Tag.Lookup("name"); ok {
+						name = nameOvrd
+					}
+					if name == k {
+						parser, err := getStringParsePtrFn(field.Type)
+						if err != nil {
+							return e, fmt.Errorf("failed to get parser for header '%s': %w", k, err)
+						}
+						newValuePtr, err := parser(v)
+						if err != nil {
+							return e, fmt.Errorf("failed to parse header '%s': %w", k, err)
+						}
+						// assign the value to the struct field
+						// Check if it is a pointer first, in which case we need to set it using an address
+						if reflect.ValueOf(e.Headers).Field(i).Kind() == reflect.Ptr {
+							reflect.ValueOf(&e.Headers).Elem().Field(i).Set(reflect.ValueOf(newValuePtr))
+							break
+						} else {
+							reflect.ValueOf(&e.Headers).Elem().Field(i).Set(reflect.ValueOf(newValuePtr).Elem())
+							break
+						}
+					}
+				}
+			}
+		}
+	}
 
 	return e, nil
 }
