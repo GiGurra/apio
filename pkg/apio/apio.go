@@ -178,6 +178,14 @@ func (e Endpoint[Input, Output]) invoke(payload inputPayload) (EndpointOutputBas
 	return output, nil
 }
 
+func AsErResp(err error) *ErrResp {
+	var errResp *ErrResp
+	if errors.As(err, &errResp) {
+		return errResp
+	}
+	return nil
+}
+
 func (e Endpoint[Input, Output]) getMethod() string {
 	return e.Method
 }
