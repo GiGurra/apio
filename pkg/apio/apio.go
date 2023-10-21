@@ -21,11 +21,25 @@ type Api struct {
 }
 
 type Server struct {
-	Scheme   string
-	Host     string
-	Port     int
-	BasePath string
-	HttpVer  string
+	Scheme      string
+	Name        string
+	Description string
+	Host        string
+	Port        int
+	BasePath    string
+	HttpVer     string
+}
+
+func (s Server) Properties() map[string]any {
+	return map[string]any{
+		"scheme":      s.Scheme,
+		"name":        s.Name,
+		"description": s.Description,
+		"host":        s.Host,
+		"port":        s.Port,
+		"basePath":    s.BasePath,
+		"httpVer":     s.HttpVer,
+	}
 }
 
 func (a Api) WithEndpoints(endpoint ...EndpointBase) Api {

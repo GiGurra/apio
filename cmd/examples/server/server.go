@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/GiGurra/apio/cmd/examples/user_setting"
 	. "github.com/GiGurra/apio/pkg/apio"
+	"github.com/GiGurra/apio/pkg/apio/openapi3"
 	"github.com/labstack/echo/v4"
 )
 
@@ -35,19 +37,32 @@ func UserSettingEndpoints() []EndpointBase {
 }
 
 func main() {
-	var testApi = Api{
-		Name: "My test API",
+	testApi := Api{
+		Name:        "My test API",
+		Description: "This is a test API.",
+		Version:     "1.0.0",
 		Servers: []Server{{
-			Scheme:   "https",
-			Host:     "api.example.com",
-			Port:     443,
-			BasePath: "/api/v1",
-			HttpVer:  "1.1",
+			Name:        "My test server",
+			Description: "My test server description",
+			Scheme:      "https",
+			Host:        "api.example.com",
+			Port:        443,
+			BasePath:    "/api/v1",
+			HttpVer:     "1.1",
 		}},
 		IntBasePath: "/api/v1",
 	}.WithEndpoints(
 		UserSettingEndpoints()...,
 	).Validate()
+
+	openApi3 := openapi3.ToOpenApi3(testApi)
+	openApi3Json, err := json.MarshalIndent(openApi3, "", "  ")
+	if err != nil {
+		panic(fmt.Errorf("failed to marshal OpenAPI 3.0.0 spec: %v", err))
+	}
+
+	fmt.Printf("OpenAPI 3.0.0 spec:\n")
+	fmt.Printf("%s\n", openApi3Json)
 
 	echoServer := echo.New()
 
