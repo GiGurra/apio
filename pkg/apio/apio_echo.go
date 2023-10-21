@@ -83,20 +83,20 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				}
 			}
 
-			outputBodyBytes, err := result.GetBody()
+			outputBodyBytes, err := result.getBody()
 			if err != nil {
 				fmt.Printf("error getting body: %v\n", err)
 				return ctx.String(500, fmt.Sprintf("internal error, see server logs"))
 			}
 
 			// write headers
-			for k, vs := range result.GetHeaders() {
+			for k, vs := range result.getHeaders() {
 				for _, v := range vs {
 					ctx.Response().Header().Add(k, v)
 				}
 			}
 
-			return ctx.JSONBlob(result.GetCode(), outputBodyBytes)
+			return ctx.JSONBlob(result.getCode(), outputBodyBytes)
 		})
 	}
 }

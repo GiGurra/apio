@@ -119,8 +119,8 @@ func TestGetUserSetting(t *testing.T) {
 		t.Fatal(fmt.Errorf("failed to invoke endpoint: %w", err))
 	}
 
-	if result.GetCode() != http.StatusOK {
-		t.Fatal(fmt.Errorf("unexpected status code: %d", result.GetCode()))
+	if result.getCode() != http.StatusOK {
+		t.Fatal(fmt.Errorf("unexpected status code: %d", result.getCode()))
 	}
 
 	fmt.Printf("result: %+v\n", result)
@@ -233,15 +233,15 @@ func TestPutUserSetting(t *testing.T) {
 		t.Fatal(fmt.Errorf("failed to invoke endpoint: %w", err))
 	}
 
-	if result.GetCode() != http.StatusNoContent {
-		t.Fatal(fmt.Errorf("unexpected status code: %d", result.GetCode()))
+	if result.getCode() != http.StatusNoContent {
+		t.Fatal(fmt.Errorf("unexpected status code: %d", result.getCode()))
 	}
 
 	expHeaders := map[string][]string{
 		"Content-Type": {"application/json"},
 	}
 
-	if diff := cmp.Diff(result.GetHeaders(), expHeaders); diff != "" {
+	if diff := cmp.Diff(result.getHeaders(), expHeaders); diff != "" {
 		t.Fatal(fmt.Errorf("unexpected headers: %s", diff))
 	}
 

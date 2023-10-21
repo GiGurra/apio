@@ -6,17 +6,19 @@ import (
 	"reflect"
 )
 
-type EndpointOutputBase interface {
-	GetCode() int
-	GetHeaders() map[string][]string
-	GetBody() ([]byte, error)
+type endpointOutputBase interface {
+	getCode() int
+	getHeaders() map[string][]string
+	getBody() ([]byte, error)
+	validateBodyType()
+	validateHeadersType()
 }
 
-func (e EndpointOutput[HeadersType, BodyType]) GetCode() int {
+func (e EndpointOutput[HeadersType, BodyType]) getCode() int {
 	return e.Code
 }
 
-func (e EndpointOutput[HeadersType, BodyType]) GetHeaders() map[string][]string {
+func (e EndpointOutput[HeadersType, BodyType]) getHeaders() map[string][]string {
 	result := make(map[string][]string)
 
 	// Check that it is a struct
@@ -40,10 +42,24 @@ func (e EndpointOutput[HeadersType, BodyType]) GetHeaders() map[string][]string 
 	return result
 }
 
-func (e EndpointOutput[HeadersType, BodyType]) GetBody() ([]byte, error) {
+func (e EndpointOutput[HeadersType, BodyType]) getBody() ([]byte, error) {
 	bytes, err := json.Marshal(e.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal body: %w", err)
 	}
 	return bytes, nil
+}
+
+func (e EndpointOutput[HeadersType, BodyType]) validateBodyType() {
+	bodyT := reflect.TypeOf(e.Body)
+	if bodyT.Kind() != reflect.Struct {
+		panic("BodyType must be a struct")
+	}
+}
+
+func (e EndpointOutput[HeadersType, BodyType]) validateHeadersType() {
+	bodyT := reflect.TypeOf(e.Headers)
+	if bodyT.Kind() != reflect.Struct {
+		panic("HeadersType must be a struct")
+	}
 }

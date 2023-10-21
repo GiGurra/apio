@@ -60,11 +60,11 @@ type EndpointBase interface {
 	getMethod() string
 	getPathPattern() string
 	getQueryPattern() string
-	invoke(payload inputPayload) (EndpointOutputBase, error)
+	invoke(payload inputPayload) (endpointOutputBase, error)
 	validate()
 }
 
-type Endpoint[Input endpointInputBase, Output EndpointOutputBase] struct {
+type Endpoint[Input endpointInputBase, Output endpointOutputBase] struct {
 	Method         string
 	Handler        func(Input) (Output, error)
 	headerBindings *HeaderBindings
@@ -155,7 +155,23 @@ func (e Endpoint[Input, Output]) getQueryBindings() QueryBindings {
 	return *e.queryBindings
 }
 
-func (e Endpoint[Input, Output]) invoke(payload inputPayload) (EndpointOutputBase, error) {
+func (e Endpoint[Input, Output]) validateInputBodyType() {
+	// We only check that it is a struct
+	var zero Input
+	zero.validateBodyType()
+}
+
+func (e Endpoint[Input, Output]) validateOutputBodyType() {
+	var zero Output
+	zero.validateBodyType()
+}
+
+func (e Endpoint[Input, Output]) validateOutputHeadersType() {
+	var zero Output
+	zero.validateHeadersType()
+}
+
+func (e Endpoint[Input, Output]) invoke(payload inputPayload) (endpointOutputBase, error) {
 	var zeroInput Input
 	var zeroOutput Output
 	input, err := zeroInput.parse(payload, e.getHeaderBindings(), e.getPathBindings(), e.getQueryBindings())
@@ -202,4 +218,7 @@ func (e Endpoint[Input, Output]) validate() {
 	e.getHeaderBindings() // panics if invalid
 	e.getPathBindings()   // panics if invalid
 	e.getQueryBindings()  // panics if invalid
+	e.validateInputBodyType()
+	e.validateOutputBodyType()
+	e.validateOutputHeadersType()
 }
