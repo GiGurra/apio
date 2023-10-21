@@ -36,9 +36,9 @@ func main() {
 		Empty, // no body in this get call
 	)
 
-	res, err := GetEndpointSpec.Call(server, input)
+	res, err := GetEndpointSpec.RPC(server, input, DefaultOpts())
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("failed to call RPC GET endpoint: %v", err))
 	}
 
 	fmt.Printf("res: %+v\n", res)

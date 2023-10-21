@@ -5,11 +5,23 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
-func (e Endpoint[Input, Output]) Call(
+type RPCOpts struct {
+	Timeout time.Duration
+}
+
+func DefaultOpts() RPCOpts {
+	return RPCOpts{
+		Timeout: 15 * time.Second,
+	}
+}
+
+func (e Endpoint[Input, Output]) RPC(
 	server Server,
 	input Input,
+	opts RPCOpts,
 ) (Output, error) {
 
 	var result Output
@@ -19,7 +31,9 @@ func (e Endpoint[Input, Output]) Call(
 	}
 
 	// Make http call
-	client := http.Client{}
+	client := http.Client{
+		Timeout: opts.Timeout,
+	}
 	bodyIoReader := bytes.NewReader(payload.Body)
 	fullPath := fmt.Sprintf("%s://%s:%d%s%s%s",
 		server.Scheme,
