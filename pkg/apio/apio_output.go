@@ -29,6 +29,12 @@ func (e EndpointOutput[HeadersType, BodyType]) GetCode() int {
 }
 
 func (e EndpointOutput[HeadersType, BodyType]) SetBody(jsonBytes []byte) (any, error) {
+
+	// if target has no fields, just return
+	if reflect.TypeOf(e.Body).NumField() == 0 {
+		return e, nil
+	}
+
 	var res BodyType
 	err := json.Unmarshal(jsonBytes, &res)
 	if err != nil {
