@@ -56,7 +56,10 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) Parse(
 	pathBinding PathBinding,
 ) (any, error) {
 	fmt.Printf("todo: implement EndpointInput.Parse\n")
+
 	var result EndpointInput[HeadersType, PathType, QueryType, BodyType]
+
+	// So far we only parse path parameters
 	for name, setter := range pathBinding.Bindings {
 		inputValue, ok := payload.Path[name]
 		if !ok {
