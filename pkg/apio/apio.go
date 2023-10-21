@@ -94,7 +94,36 @@ func (p PathBinding) BindData(instance any, params map[string]string) error {
 	return nil
 }
 
-type fieldSetter = func(v reflect.Value, value string) error
+type fieldSetter = func(target reflect.Value, from string) error
+
+func getParseFn(tpe reflect.Type) (func(string) (any, error), error) {
+	switch tpe.Kind() {
+	case reflect.String:
+		return func(from string) (any, error) {
+			return from, nil
+		}, nil
+	case reflect.Int:
+		return func(from string) (any, error) { return strconv.Atoi(from) }, nil
+	default:
+		return nil, fmt.Errorf("unsupported type: %s", tpe.Name())
+	}
+}
+
+func getFieldSetter(field reflect.StructField) fieldSetter {
+	parseFn, err := getParseFn(field.Type)
+	if err != nil {
+		panic(fmt.Errorf("failed to get parse function for field '%s': %w", field.Name, err))
+	}
+
+	return func(target reflect.Value, from string) error {
+		parsed, err := parseFn(from)
+		if err != nil {
+			return fmt.Errorf("failed to parse '%s' into field %s [%t]: %w", from, field.Name, field.Type, err)
+		}
+		target.Set(reflect.ValueOf(parsed))
+		return nil
+	}
+}
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) CalcPathBinding() PathBinding {
 
@@ -118,34 +147,6 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) CalcPathBindi
 		// Check if the field has path
 		field := pathT.Field(i)
 
-		setter := func() fieldSetter {
-			switch field.Type.Kind() {
-			case reflect.String:
-				return func(v reflect.Value, value string) error {
-					v.SetString(value)
-					return nil
-				}
-			case reflect.Int:
-				return func(v reflect.Value, value string) error {
-					intvalue, err := strconv.Atoi(value)
-					if err != nil {
-						return fmt.Errorf("failed to parse '%s' as int: %w", value, err)
-					}
-					v.SetInt(int64(intvalue))
-					return nil
-				}
-			default:
-				// use the json mapping
-				return func(v reflect.Value, value string) error {
-					err := json.Unmarshal([]byte(value), v.Interface())
-					if err != nil {
-						return fmt.Errorf("failed to unmarshal '%s' into '%s': %w", value, field.Type.Name(), err)
-					}
-					return nil
-				}
-			}
-		}()
-
 		if field.Name == "_" {
 			// We won't bind this parameter, but it is still needed in the path
 			// Check if it has a tag called path
@@ -164,7 +165,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) CalcPathBindi
 
 			alreadyTaken[field.Name] = true
 			result.FlatPath += "/:" + field.Name
-			result.Bindings[field.Name] = setter
+			result.Bindings[field.Name] = getFieldSetter(field)
 		}
 	}
 
