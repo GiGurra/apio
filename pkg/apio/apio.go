@@ -1,25 +1,34 @@
 package apio
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 )
 
-type Payload interface {
+type Payload struct {
+	Headers map[string][]string
+	Path    map[string]string
+	Query   map[string][]string
+	Body    []byte
 }
 
 type EndpointBase interface {
 	GetMethod() string
 	GetPath() string
+	Invoke(payload Payload) (EndpointOutputBase, error)
 }
 
 type EndpointInputBase interface {
 	GetHeaders() any
 	GetPath() any
-	GetPathPattern() string
+	CalcPathBinding() PathBinding
 	GetQuery() any
 	GetBody() any
+	Parse(payload Payload, pathBinding PathBinding) (any, error)
 }
 
 type EndpointInput[
@@ -42,7 +51,48 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPath() any
 	return e.Path
 }
 
-func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPathPattern() string {
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) Parse(
+	payload Payload,
+	pathBinding PathBinding,
+) (any, error) {
+	fmt.Printf("todo: implement EndpointInput.Parse\n")
+	var result EndpointInput[HeadersType, PathType, QueryType, BodyType]
+	for name, setter := range pathBinding.Bindings {
+		inputValue, ok := payload.Path[name]
+		if !ok {
+			return result, fmt.Errorf("missing path parameter '%s'", name)
+		}
+		valueToSet := reflect.ValueOf(result.Path).Elem().FieldByName(name)
+		err := setter(valueToSet, inputValue)
+		if err != nil {
+			return result, fmt.Errorf("failed to set path parameter '%s': %w", name, err)
+		}
+	}
+	return result, nil
+}
+
+type PathBinding struct {
+	FlatPath string
+	Bindings map[string]fieldSetter
+}
+
+func (p PathBinding) BindData(instance any, params map[string]string) error {
+	elem := reflect.ValueOf(instance).Elem()
+	for key, value := range params {
+		if setter, ok := p.Bindings[key]; ok {
+			field := elem.FieldByName(key)
+			err := setter(field, value)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+type fieldSetter = func(v reflect.Value, value string) error
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) CalcPathBinding() PathBinding {
 
 	// iterate over fields in PathType
 
@@ -53,23 +103,46 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPathPatter
 		panic("PathType must be a struct")
 	}
 
-	result := ""
+	result := PathBinding{
+		FlatPath: "",
+		Bindings: make(map[string]fieldSetter),
+	}
 	alreadyTaken := make(map[string]bool)
 
 	// Iterate over fields in PathType
 	for i := 0; i < pathT.NumField(); i++ {
 		// Check if the field has path
 		field := pathT.Field(i)
+
+		setter := func() fieldSetter {
+			switch field.Type.Kind() {
+			case reflect.String:
+				return func(v reflect.Value, value string) error {
+					v.SetString(value)
+					return nil
+				}
+			default:
+				// use the json mapping
+				return func(v reflect.Value, value string) error {
+					err := json.Unmarshal([]byte(value), v.Interface())
+					if err != nil {
+						return fmt.Errorf("failed to unmarshal '%s' into '%s': %w", value, field.Type.Name(), err)
+					}
+					return nil
+				}
+			}
+		}()
+
 		if field.Name == "_" {
 			// We won't bind this parameter, but it is still needed in the path
 			// Check if it has a tag called path
 			pathTag := field.Tag.Get("path")
 			if pathTag == "" {
 				// Treat as wildcard
-				result += "/*"
+				result.FlatPath += "/*"
 			} else {
 				// Treat as literal
-				result += "/" + strings.TrimPrefix(pathTag, "/")
+				result.FlatPath += "/" + strings.TrimPrefix(pathTag, "/")
 			}
 		} else {
 			if alreadyTaken[field.Name] {
@@ -77,7 +150,8 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPathPatter
 			}
 
 			alreadyTaken[field.Name] = true
-			result += "/:" + field.Name
+			result.FlatPath += "/:" + field.Name
+			result.Bindings[field.Name] = setter
 		}
 	}
 
@@ -94,10 +168,10 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetBody() any
 
 type X any
 
-type EndpoitOutputBase interface {
+type EndpointOutputBase interface {
 	GetCode() int
-	GetHeaders() any
-	GetBody() any
+	GetHeaders() map[string][]string
+	GetBody() ([]byte, error)
 }
 
 type EndpointOutput[
@@ -113,12 +187,17 @@ func (e EndpointOutput[HeadersType, BodyType]) GetCode() int {
 	return e.Code
 }
 
-func (e EndpointOutput[HeadersType, BodyType]) GetHeaders() any {
-	return e.Headers
+func (e EndpointOutput[HeadersType, BodyType]) GetHeaders() map[string][]string {
+	fmt.Printf("TODO: implement EndpointOutput.GetHeaders\n")
+	return make(map[string][]string)
 }
 
-func (e EndpointOutput[HeadersType, BodyType]) GetBody() any {
-	return e.Body
+func (e EndpointOutput[HeadersType, BodyType]) GetBody() ([]byte, error) {
+	bytes, err := json.Marshal(e.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal body: %w", err)
+	}
+	return bytes, nil
 }
 
 func EmptyResponse() EndpointOutput[X, X] {
@@ -147,20 +226,49 @@ func HeadersResponse[H any](headers H) EndpointOutput[H, X] {
 	}
 }
 
-type Endpoint[Input EndpointInputBase, Output EndpoitOutputBase] struct {
-	Method     string
-	Handler    func(Input) (Output, error)
-	cachedPath string
+type Endpoint[Input EndpointInputBase, Output EndpointOutputBase] struct {
+	Method      string
+	Handler     func(Input) (Output, error)
+	pathBinding *PathBinding
 }
 
-func calcPathPattern[Input EndpointInputBase]() string {
+func calcPathBinding[Input EndpointInputBase]() PathBinding {
 	var zero Input
-	return zero.GetPathPattern()
+	return zero.CalcPathBinding()
 }
 
 func (e Endpoint[Input, Output]) WithMethod(method string) Endpoint[Input, Output] {
 	e.Method = method
 	return e
+}
+
+func (e Endpoint[Input, Output]) GetPathBinding() PathBinding {
+	if e.pathBinding == nil {
+		b := calcPathBinding[Input]()
+		e.pathBinding = &b
+	}
+	return *e.pathBinding
+}
+
+func (e Endpoint[Input, Output]) Invoke(payload Payload) (EndpointOutputBase, error) {
+	var zeroInput Input
+	var zeroOutput Output
+	input, err := zeroInput.Parse(payload, e.GetPathBinding())
+	if err != nil {
+		return zeroOutput, NewError(http.StatusBadRequest, fmt.Sprintf("failed to parse input: %v", err), err)
+	}
+	inputAsInput, ok := input.(Input)
+	if !ok {
+		return zeroOutput, NewError(http.StatusInternalServerError, fmt.Sprintf("failed to cast input to %t", reflect.TypeOf(zeroInput)), nil)
+	}
+	output, err := e.Handler(inputAsInput)
+	if err != nil {
+		var errResp *ErrResp
+		if errors.As(err, &errResp) {
+			return zeroOutput, errResp
+		}
+	}
+	return output, nil
 }
 
 func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, error)) Endpoint[Input, Output] {
@@ -173,10 +281,7 @@ func (e Endpoint[Input, Output]) GetMethod() string {
 }
 
 func (e Endpoint[Input, Output]) GetPath() string {
-	if e.cachedPath == "" {
-		e.cachedPath = calcPathPattern[Input]()
-	}
-	return e.cachedPath
+	return e.GetPathBinding().FlatPath
 }
 
 type Server struct {
