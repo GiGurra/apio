@@ -30,7 +30,7 @@ func UserSettingEndpoints() []EndpointBase {
 		]{}.WithMethod("GET").
 			WithHandler(func(
 				input EndpointInput[X, Path, X, X],
-			) (EndpointOutput[X, UserSettingBody], *Error) {
+			) (EndpointOutput[X, UserSettingBody], error) {
 				return BodyResponse(UserSettingBody{
 					Value: "testValue",
 					Type:  "testType",
@@ -43,7 +43,7 @@ func UserSettingEndpoints() []EndpointBase {
 		]{}.WithMethod("PUT").
 			WithHandler(func(
 				input EndpointInput[X, Path, X, UserSettingBody],
-			) (EndpointOutput[X, X], *Error) {
+			) (EndpointOutput[X, X], error) {
 				return EmptyResponse(), nil
 			}),
 	}

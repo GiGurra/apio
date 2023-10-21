@@ -1,5 +1,7 @@
 package apio
 
+import "fmt"
+
 type Payload interface {
 }
 
@@ -59,7 +61,7 @@ func HeadersResponse[H any](headers H) EndpointOutput[H, X] {
 
 type Endpoint[Input, Output any] struct {
 	Method  string
-	Handler func(Input) (Output, *Error)
+	Handler func(Input) (Output, error)
 	path    string
 }
 
@@ -68,7 +70,7 @@ func (e Endpoint[Input, Output]) WithMethod(method string) Endpoint[Input, Outpu
 	return e
 }
 
-func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, *Error)) Endpoint[Input, Output] {
+func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, error)) Endpoint[Input, Output] {
 	e.Handler = handler
 	return e
 }
@@ -106,8 +108,20 @@ func (a Api) AddEndpoints(endpoint ...EndpointBase) Api {
 	return a
 }
 
-type Error struct {
-	Code     int
-	Message  string
-	LocalErr error
+type ErrResp struct {
+	Code    int
+	Message string
+	IntErr  error
+}
+
+func (e ErrResp) Error() string {
+	return fmt.Sprintf("err response: %d: %s", e.Code, e.Message)
+}
+
+func NewError(code int, message string, intErr error) error {
+	return &ErrResp{
+		Code:    code,
+		Message: message,
+		IntErr:  intErr,
+	}
 }
