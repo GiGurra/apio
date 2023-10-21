@@ -13,6 +13,8 @@ import (
 
 type Api struct {
 	Name        string
+	Description string
+	Version     string
 	Servers     []Server
 	IntBasePath string
 	Endpoints   []EndpointBase
