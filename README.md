@@ -19,7 +19,9 @@ It asks the question:
 
 ### API definition
 
-An API consists of one or more resources, each with one or more endpoints:
+An API consists of one or more resources, each with one or more endpoints.
+The simplest way of grouping the endpoints together is to simply have a go
+package for each resource:
 
 ```go
 package user_setting
