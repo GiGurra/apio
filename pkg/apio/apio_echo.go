@@ -86,6 +86,13 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				return ctx.String(500, fmt.Sprintf("internal error, see server logs"))
 			}
 
+			// write headers
+			for k, vs := range result.GetHeaders() {
+				for _, v := range vs {
+					ctx.Response().Header().Add(k, v)
+				}
+			}
+
 			return ctx.JSONBlob(result.GetCode(), outputBodyBytes)
 		})
 	}
