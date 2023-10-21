@@ -33,6 +33,7 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 
 			body := ctx.Request().Body
 			defer func(body io.ReadCloser) {
+				_, _ = io.ReadAll(body)
 				err := body.Close()
 				if err != nil {
 					fmt.Printf("error closing body: %v", err)
