@@ -2,7 +2,9 @@ package openapi3
 
 import (
 	"github.com/GiGurra/apio/pkg/apio"
+	"reflect"
 	"strconv"
+	"strings"
 )
 
 type OpenApi struct {
@@ -22,6 +24,7 @@ type Schema struct {
 	Type       string         `json:"type" yaml:"type" text:"type"`
 	Properties map[string]any `json:"properties" yaml:"properties" text:"properties"`
 }
+
 type Parameter struct {
 	Name        string         `json:"name" yaml:"name" text:"name"`
 	In          string         `json:"in" yaml:"in" text:"in"`
@@ -66,7 +69,66 @@ func ToOpenApi3(api apio.Api) OpenApi {
 	}
 }
 
+func apioPattern2OpenApi3Pattern(pattern string) string {
+
+	result := ""
+	for _, part := range strings.Split(pattern, "/") {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+		if trimmed[0] == ':' {
+			result += "/{" + trimmed[1:] + "}"
+		} else {
+			result += "/" + trimmed
+		}
+	}
+	return result
+}
+
+func GetStructName[T any]() string {
+	var i T
+	t := reflect.TypeOf(i)
+	if t.Kind() == reflect.Ptr {
+		return t.Elem().Name()
+	}
+	return t.Name()
+}
+
 func GetPaths(api apio.Api) map[string]any {
+	//
+	//result := make(map[string]any)
+	//for _, e := range api.Endpoints {
+	//	path := apioPattern2OpenApi3Pattern(e.GetPathPattern())
+	//	if path[0] != '/' {
+	//		path = "/" + path
+	//	}
+	//	if _, ok := result[path]; !ok {
+	//		result[path] = make(map[string]Operation)
+	//	}
+	//	result[path].(map[string]Operation)[e.GetMethod()] = Operation{
+	//		Summary:     e.Summary,
+	//		Description: e.Description,
+	//		OperationId: e.OperationId,
+	//		Parameters:  GetParameters(e),
+	//		Responses: map[string]Response{
+	//			"200": {
+	//				Description: "A list of users",
+	//				Content: map[string]any{
+	//					"application/json": map[string]any{
+	//						"schema": map[string]any{
+	//							"type": "array",
+	//							"items": map[string]any{
+	//								"$ref": "#/components/schemas/User",
+	//							},
+	//						},
+	//					},
+	//				},
+	//			},
+	//		},
+	//	}
+	//}
+
 	return map[string]any{
 		"/users": map[string]Operation{
 			"get": {
