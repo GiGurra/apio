@@ -50,7 +50,21 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 	// parse headers
 	for name, setter := range headerBindings.Bindings {
 		inputValue := payload.Headers[name]
-		valueToSet := reflect.ValueOf(&result.Headers).Elem().FieldByName(name)
+		rootStructValue := reflect.ValueOf(&result.Headers).Elem()
+		valueToSet := rootStructValue.FieldByName(name)
+		reflectZero := reflect.Value{}
+		if valueToSet == reflectZero {
+			// Did not find the correct field. Try to find it by tag
+			rootStructType := rootStructValue.Type()
+			for i := 0; i < rootStructType.NumField(); i++ {
+				field := rootStructType.Field(i)
+				if field.Tag.Get("name") == name {
+					valueToSet = rootStructValue.Field(i)
+					break
+				}
+			}
+		}
+
 		if len(inputValue) > 1 {
 			return result, fmt.Errorf("repeated header parameters not yet supported, field: %s", name)
 		}
@@ -124,18 +138,23 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) calcHeaderBin
 	}
 	alreadyTaken := make(map[string]bool)
 
-	// Iterate over fields in PathType
+	// Iterate over fields in HeaderType
 	for i := 0; i < pathT.NumField(); i++ {
 		// Check if the field has path
 		field := pathT.Field(i)
 
 		if field.Name != "_" {
-			if alreadyTaken[field.Name] {
-				panic(fmt.Sprintf("field '%s' is already taken", field.Name))
+			name := field.Name
+			if nameOvrd, ok := field.Tag.Lookup("name"); ok {
+				name = nameOvrd
 			}
 
-			alreadyTaken[field.Name] = true
-			result.Bindings[field.Name] = getFromStringQueryFieldSetter(field)
+			if alreadyTaken[name] {
+				panic(fmt.Sprintf("header '%s' is already taken", name))
+			}
+
+			alreadyTaken[name] = true
+			result.Bindings[name] = getFromStringHeaderFieldSetter(field, name)
 		}
 	}
 
