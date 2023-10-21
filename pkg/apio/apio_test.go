@@ -3,6 +3,7 @@ package apio
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"net/http"
 	"testing"
 )
 
@@ -28,7 +29,7 @@ func UserSettingEndpoints() []EndpointBase {
 			EndpointInput[X, UserSettingPath, X, X],
 			EndpointOutput[X, UserSetting],
 		]{
-			Method: "GET",
+			Method: http.MethodGet,
 			Handler: func(
 				input EndpointInput[X, UserSettingPath, X, X],
 			) (EndpointOutput[X, UserSetting], error) {
@@ -44,7 +45,7 @@ func UserSettingEndpoints() []EndpointBase {
 			EndpointInput[X, UserSettingPath, X, UserSetting],
 			EndpointOutput[X, X],
 		]{
-			Method: "PUT",
+			Method: http.MethodPut,
 			Handler: func(
 				input EndpointInput[X, UserSettingPath, X, UserSetting],
 			) (EndpointOutput[X, X], error) {
