@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -124,6 +125,15 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) CalcPathBindi
 					v.SetString(value)
 					return nil
 				}
+			case reflect.Int:
+				return func(v reflect.Value, value string) error {
+					intvalue, err := strconv.Atoi(value)
+					if err != nil {
+						return fmt.Errorf("failed to parse '%s' as int: %w", value, err)
+					}
+					v.SetInt(int64(intvalue))
+					return nil
+				}
 			default:
 				// use the json mapping
 				return func(v reflect.Value, value string) error {
@@ -204,7 +214,9 @@ func (e EndpointOutput[HeadersType, BodyType]) GetBody() ([]byte, error) {
 }
 
 func EmptyResponse() EndpointOutput[X, X] {
-	return EndpointOutput[X, X]{}
+	return EndpointOutput[X, X]{
+		Code: 204,
+	}
 }
 
 func Response[H any, B any](headers H, body B) EndpointOutput[H, B] {

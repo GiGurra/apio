@@ -32,6 +32,7 @@ func UserSettingEndpoints() []EndpointBase {
 			Handler: func(
 				input EndpointInput[X, UserSettingPath, X, X],
 			) (EndpointOutput[X, UserSetting], error) {
+				fmt.Printf("invoked GET path with input: %+v\n", input)
 				return BodyResponse(UserSetting{
 					Value: "testValue",
 					Type:  "testType",
@@ -47,6 +48,7 @@ func UserSettingEndpoints() []EndpointBase {
 			Handler: func(
 				input EndpointInput[X, UserSettingPath, X, UserSetting],
 			) (EndpointOutput[X, X], error) {
+				fmt.Printf("invoked PUT path with input: %+v\n", input)
 				return EmptyResponse(), nil
 			},
 		},
