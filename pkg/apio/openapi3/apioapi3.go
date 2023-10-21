@@ -23,6 +23,7 @@ type Server struct {
 type Schema struct {
 	Type       string         `json:"type" yaml:"type" text:"type"`
 	Properties map[string]any `json:"properties" yaml:"properties" text:"properties"`
+	Required   []string       `json:"required" yaml:"required" text:"required"`
 }
 
 type Parameter struct {
@@ -220,19 +221,22 @@ func GetComponents(api apio.Api) map[string]any {
 	for _, e := range api.Endpoints {
 		bodyInfo := e.GetBodyOutputInfo()
 		if bodyInfo.HasContent() {
+			props := make(map[string]any)
+			required := make([]string, 0)
+
+			for _, field := range bodyInfo.Fields {
+				props[field.Name] = map[string]any{
+					"type": goTypeToOpenapiType(field.ValueType),
+				}
+				if field.IsRequired() {
+					required = append(required, field.Name)
+				}
+			}
+
 			schemas[schemaNameOf(bodyInfo)] = Schema{
-				Type: "object",
-				Properties: map[string]any{
-					"id": map[string]any{
-						"type": "integer",
-					},
-					"name": map[string]any{
-						"type": "string",
-					},
-					"email": map[string]any{
-						"type": "string",
-					},
-				},
+				Type:       "object",
+				Properties: props,
+				Required:   required,
 			}
 		}
 	}
