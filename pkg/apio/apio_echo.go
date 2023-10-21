@@ -36,17 +36,17 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				headers[k] = v
 			}
 
-			path := map[string]string{}
+			pathParams := map[string]string{}
 			pathNames := ctx.ParamNames()
 			pathValues := ctx.ParamValues()
 			numIncParams := len(ctx.ParamNames())
 			for i := 0; i < numIncParams; i++ {
-				path[pathNames[i]] = pathValues[i]
+				pathParams[pathNames[i]] = pathValues[i]
 			}
 
-			query := map[string][]string{}
+			queryParams := map[string][]string{}
 			for k, v := range ctx.QueryParams() {
-				query[k] = v
+				queryParams[k] = v
 			}
 
 			body := ctx.Request().Body
@@ -64,8 +64,8 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 
 			result, err := endpoint.invoke(inputPayload{
 				Headers: headers,
-				Path:    path,
-				Query:   query,
+				Path:    pathParams,
+				Query:   queryParams,
 				Body:    bodyBytes,
 			})
 
