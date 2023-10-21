@@ -4,18 +4,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strings"
 )
 
-type inputPayload struct {
+type InputPayload struct {
 	Headers map[string][]string
 	Path    map[string]string
+	PathStr string
 	Query   map[string][]string
 	Body    []byte
 }
 
-type endpointInputBase interface {
+func (p InputPayload) QueryString() string {
+	if len(p.Query) == 0 {
+		return ""
+	}
+	var result strings.Builder
+	result.WriteString("?")
+	for k, v := range p.Query {
+		urlEncodedValue := url.QueryEscape(v[0])
+		result.WriteString(k + "=" + urlEncodedValue + "&")
+	}
+	return strings.TrimSuffix(result.String(), "&")
+}
+
+type EndpointInputBase interface {
 	getHeaders() any
 	getPath() any
 	calcHeaderBindings() HeaderBindings
@@ -25,15 +40,129 @@ type endpointInputBase interface {
 	getQuery() any
 	getBody() any
 	parse(
-		payload inputPayload,
+		payload InputPayload,
 		bindings HeaderBindings,
 		pathBinding PathBindings,
 		queryBindings QueryBindings,
 	) (any, error)
+	ToPayload() (InputPayload, error)
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getHeaders() any {
 	return e.Headers
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (InputPayload, error) {
+
+	bodyJsonBytes, err := json.Marshal(e.Body)
+	if err != nil {
+		return InputPayload{}, fmt.Errorf("failed to marshal body: %w", err)
+	}
+
+	serializeValue := func(value reflect.Value) (string, error) {
+		str, err := json.Marshal(value.Interface())
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal path parameter '%s': %w", value, err)
+		}
+		return strings.TrimSuffix(strings.TrimPrefix(string(str), "\""), "\""), nil
+	}
+
+	// Serialize headers
+	headers := map[string][]string{}
+	headersT := reflect.TypeOf(e.Headers)
+	if headersT.Kind() != reflect.Struct {
+		return InputPayload{}, fmt.Errorf("HeadersType must be a struct, this should have been caught in initial validation step")
+	}
+	for i := 0; i < headersT.NumField(); i++ {
+
+		// if the value is nil, move on
+		tpe := headersT.Field(i).Type
+		value := reflect.ValueOf(e.Headers).Field(i)
+		if tpe.Kind() == reflect.Ptr && value.IsNil() {
+			continue
+		}
+
+		field := headersT.Field(i)
+		if field.Name != "_" {
+			name := field.Name
+			if nameOvrd, ok := field.Tag.Lookup("name"); ok {
+				name = nameOvrd
+			}
+			valueSerialized, err := serializeValue(value)
+			if err != nil {
+				return InputPayload{}, err
+			}
+			headers[name] = []string{valueSerialized}
+		}
+	}
+
+	// serialize path
+	path := map[string]string{}
+	pathStr := ""
+	pathT := reflect.TypeOf(e.Path)
+	if pathT.Kind() != reflect.Struct {
+		return InputPayload{}, fmt.Errorf("PathType must be a struct, this should have been caught in initial validation step")
+	}
+	for i := 0; i < pathT.NumField(); i++ {
+		field := pathT.Field(i)
+		if field.Name == "_" {
+			// We won't bind this parameter, but it is still needed in the path
+			// Check if it has a tag called path
+			pathTag := field.Tag.Get("path")
+			if pathTag == "" {
+				// Treat as wildcard
+				//path += "/*"
+				return InputPayload{}, fmt.Errorf("wildcard path parameters not yet supported, field: %s", field.Name)
+			} else {
+				// Treat as literal
+				pathStr += "/" + strings.TrimPrefix(pathTag, "/")
+			}
+		} else {
+			valueSerialized, err := serializeValue(reflect.ValueOf(e.Path).Field(i))
+			if err != nil {
+				return InputPayload{}, err
+			}
+			pathStr += "/" + valueSerialized
+			path[field.Name] = valueSerialized
+		}
+	}
+
+	// Serialize query
+	query := map[string][]string{}
+	queryT := reflect.TypeOf(e.Query)
+	if queryT.Kind() != reflect.Struct {
+		return InputPayload{}, fmt.Errorf("QueryType must be a struct, this should have been caught in initial validation step")
+	}
+	for i := 0; i < queryT.NumField(); i++ {
+
+		// if the value is nil, move on
+		tpe := headersT.Field(i).Type
+		value := reflect.ValueOf(e.Headers).Field(i)
+		if tpe.Kind() == reflect.Ptr && value.IsNil() {
+			continue
+		}
+
+		field := queryT.Field(i)
+		if field.Name != "_" {
+			name := field.Name
+			if nameOvrd, ok := field.Tag.Lookup("name"); ok {
+				name = nameOvrd
+			}
+			valueSerialized, err := serializeValue(value)
+			if err != nil {
+				return InputPayload{}, err
+			}
+			query[name] = []string{valueSerialized}
+		}
+	}
+
+	return InputPayload{
+		Headers: headers,
+		Path:    path,
+		PathStr: pathStr,
+		Query:   query,
+		Body:    bodyJsonBytes,
+	}, nil
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getPath() any {
@@ -41,7 +170,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getPath() any
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
-	payload inputPayload,
+	payload InputPayload,
 	headerBindings HeaderBindings,
 	pathBindings PathBindings,
 	queryBindings QueryBindings,
@@ -273,17 +402,17 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getBody() any
 	return e.Body
 }
 
-func calcHeaderBindings[Input endpointInputBase]() HeaderBindings {
+func calcHeaderBindings[Input EndpointInputBase]() HeaderBindings {
 	var zero Input
 	return zero.calcHeaderBindings()
 }
 
-func calcPathBindings[Input endpointInputBase]() PathBindings {
+func calcPathBindings[Input EndpointInputBase]() PathBindings {
 	var zero Input
 	return zero.calcPathBindings()
 }
 
-func calcQueryBindings[Input endpointInputBase]() QueryBindings {
+func calcQueryBindings[Input EndpointInputBase]() QueryBindings {
 	var zero Input
 	return zero.calcQueryBindings()
 }

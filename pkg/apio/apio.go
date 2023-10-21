@@ -60,11 +60,11 @@ type EndpointBase interface {
 	getMethod() string
 	getPathPattern() string
 	getQueryPattern() string
-	invoke(payload inputPayload) (endpointOutputBase, error)
+	invoke(payload InputPayload) (EndpointOutputBase, error)
 	validate()
 }
 
-type Endpoint[Input endpointInputBase, Output endpointOutputBase] struct {
+type Endpoint[Input EndpointInputBase, Output EndpointOutputBase] struct {
 	Method         string
 	Handler        func(Input) (Output, error)
 	headerBindings *HeaderBindings
@@ -176,7 +176,7 @@ func (e Endpoint[Input, Output]) validateOutputHeadersType() {
 	zero.validateHeadersType()
 }
 
-func (e Endpoint[Input, Output]) invoke(payload inputPayload) (endpointOutputBase, error) {
+func (e Endpoint[Input, Output]) invoke(payload InputPayload) (EndpointOutputBase, error) {
 	var zeroInput Input
 	var zeroOutput Output
 	input, err := zeroInput.parse(payload, e.getHeaderBindings(), e.getPathBindings(), e.getQueryBindings())

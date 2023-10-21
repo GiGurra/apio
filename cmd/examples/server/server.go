@@ -2,55 +2,16 @@ package main
 
 import (
 	"fmt"
+	. "github.com/GiGurra/apio/cmd/examples/common"
 	. "github.com/GiGurra/apio/pkg/apio"
 	"github.com/labstack/echo/v4"
-	"net/http"
 )
-
-// UserSettingPath represents "/users/:user/settings/:settingCat/:settingId"
-type UserSettingPath struct {
-	_          any `path:"/users"`
-	User       int
-	_          any `path:"/settings"`
-	SettingCat string
-	SettingId  string
-}
-
-type UserSettingQuery struct {
-	Foo *string
-	Bar int
-}
-
-type UserSetting struct {
-	Value any     `json:"value"`
-	Type  string  `json:"type"`
-	Opt   *string `json:"opt"`
-}
-
-type UserSettingHeaders struct {
-	Yo          any
-	ContentType string `name:"Content-Type"`
-}
-
-type OutputHeaders struct {
-	ContentType string `name:"Content-Type"`
-}
-
-var getEndpointSpec = Endpoint[
-	EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
-	EndpointOutput[X, UserSetting],
-]{Method: http.MethodGet}
-
-var postEndpointSpec = Endpoint[
-	EndpointInput[X, UserSettingPath, X, UserSetting],
-	EndpointOutput[OutputHeaders, X],
-]{Method: http.MethodPost}
 
 func UserSettingEndpoints() []EndpointBase {
 
 	return []EndpointBase{
 
-		getEndpointSpec.
+		GetEndpointSpec.
 			WithHandler(func(
 				input EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
 			) (EndpointOutput[X, UserSetting], error) {
@@ -61,7 +22,7 @@ func UserSettingEndpoints() []EndpointBase {
 				}), nil
 			}),
 
-		postEndpointSpec.WithHandler(func(
+		PutEndpointSpec.WithHandler(func(
 			input EndpointInput[X, UserSettingPath, X, UserSetting],
 		) (EndpointOutput[OutputHeaders, X], error) {
 			fmt.Printf("invoked PUT path with input: %+v\n", input)

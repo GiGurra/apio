@@ -65,7 +65,7 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				return fmt.Errorf("error reading body: %v", err)
 			}
 
-			result, err := endpoint.invoke(inputPayload{
+			result, err := endpoint.invoke(InputPayload{
 				Headers: headers,
 				Path:    pathParams,
 				Query:   queryParams,
@@ -83,20 +83,20 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				}
 			}
 
-			outputBodyBytes, err := result.getBody()
+			outputBodyBytes, err := result.GetBody()
 			if err != nil {
 				fmt.Printf("error getting body: %v\n", err)
 				return ctx.String(500, fmt.Sprintf("internal error, see server logs"))
 			}
 
 			// write headers
-			for k, vs := range result.getHeaders() {
+			for k, vs := range result.GetHeaders() {
 				for _, v := range vs {
 					ctx.Response().Header().Add(k, v)
 				}
 			}
 
-			return ctx.JSONBlob(result.getCode(), outputBodyBytes)
+			return ctx.JSONBlob(result.GetCode(), outputBodyBytes)
 		})
 	}
 }

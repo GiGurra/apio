@@ -99,7 +99,7 @@ func TestGetUserSetting(t *testing.T) {
 		panic("no GET endpoint found")
 	}()
 
-	result, err := getEndpoint.invoke(inputPayload{
+	result, err := getEndpoint.invoke(InputPayload{
 		Headers: map[string][]string{
 			"Content-Type": {"application/json"},
 			"Yo":           {"da"},
@@ -119,8 +119,8 @@ func TestGetUserSetting(t *testing.T) {
 		t.Fatal(fmt.Errorf("failed to invoke endpoint: %w", err))
 	}
 
-	if result.getCode() != http.StatusOK {
-		t.Fatal(fmt.Errorf("unexpected status code: %d", result.getCode()))
+	if result.GetCode() != http.StatusOK {
+		t.Fatal(fmt.Errorf("unexpected status code: %d", result.GetCode()))
 	}
 
 	fmt.Printf("result: %+v\n", result)
@@ -137,7 +137,7 @@ func TestGetBadRequestMissingHeader(t *testing.T) {
 		panic("no GET endpoint found")
 	}()
 
-	_, err := getEndpoint.invoke(inputPayload{
+	_, err := getEndpoint.invoke(InputPayload{
 		Headers: map[string][]string{
 			"Content-Type": {"application/json"},
 		},
@@ -173,7 +173,7 @@ func TestGetUserMissingPath(t *testing.T) {
 		panic("no GET endpoint found")
 	}()
 
-	_, err := getEndpoint.invoke(inputPayload{
+	_, err := getEndpoint.invoke(InputPayload{
 		Headers: map[string][]string{
 			"Content-Type": {"application/json"},
 			"Yo":           {"da"},
@@ -217,7 +217,7 @@ func TestPutUserSetting(t *testing.T) {
 		panic("no PUT endpoint found")
 	}()
 
-	result, err := getEndpoint.invoke(inputPayload{
+	result, err := getEndpoint.invoke(InputPayload{
 		Path: map[string]string{
 			"User":       "123",
 			"SettingCat": "foo",
@@ -233,15 +233,15 @@ func TestPutUserSetting(t *testing.T) {
 		t.Fatal(fmt.Errorf("failed to invoke endpoint: %w", err))
 	}
 
-	if result.getCode() != http.StatusNoContent {
-		t.Fatal(fmt.Errorf("unexpected status code: %d", result.getCode()))
+	if result.GetCode() != http.StatusNoContent {
+		t.Fatal(fmt.Errorf("unexpected status code: %d", result.GetCode()))
 	}
 
 	expHeaders := map[string][]string{
 		"Content-Type": {"application/json"},
 	}
 
-	if diff := cmp.Diff(result.getHeaders(), expHeaders); diff != "" {
+	if diff := cmp.Diff(result.GetHeaders(), expHeaders); diff != "" {
 		t.Fatal(fmt.Errorf("unexpected headers: %s", diff))
 	}
 
