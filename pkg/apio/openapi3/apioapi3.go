@@ -2,6 +2,7 @@ package openapi3
 
 import (
 	"github.com/GiGurra/apio/pkg/apio"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -85,6 +86,47 @@ func apioPattern2OpenApi3Pattern(pattern string) string {
 	return result
 }
 
+func goTypeToOpenapiType(t reflect.Type) string {
+	switch t.Kind() {
+	case reflect.Bool:
+		return "boolean"
+	case reflect.Int:
+		return "integer"
+	case reflect.Int8:
+		return "integer"
+	case reflect.Int16:
+		return "integer"
+	case reflect.Int32:
+		return "integer"
+	case reflect.Int64:
+		return "integer"
+	case reflect.Uint:
+		return "integer"
+	case reflect.Uint8:
+		return "integer"
+	case reflect.Uint16:
+		return "integer"
+	case reflect.Uint32:
+		return "integer"
+	case reflect.Uint64:
+		return "integer"
+	case reflect.Float32:
+		return "number"
+	case reflect.Float64:
+		return "number"
+	case reflect.String:
+		return "string"
+	case reflect.Struct:
+		return "object"
+	case reflect.Ptr:
+		return goTypeToOpenapiType(t.Elem())
+	case reflect.Slice:
+		return "array"
+	default:
+		panic("unsupported type: " + t.String())
+	}
+}
+
 func GetParameters(api apio.EndpointBase) []Parameter {
 	info := api.GetInputPathInfo()
 	result := make([]Parameter, 0)
@@ -99,7 +141,7 @@ func GetParameters(api apio.EndpointBase) []Parameter {
 			Description: field.Name,
 			Required:    true,
 			Schema: map[string]any{
-				"type": field.Type.Name(),
+				"type": goTypeToOpenapiType(field.Type),
 			},
 		})
 	}
