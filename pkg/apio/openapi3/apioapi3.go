@@ -191,7 +191,6 @@ func GetPaths(api apio.Api) map[string]any {
 			content = map[string]any{
 				"application/json": map[string]any{
 					"schema": map[string]any{
-						"type": "object",
 						"$ref": "#/components/schemas/" + schemaNameOf(bodyInfo),
 					},
 				},
