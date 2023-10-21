@@ -74,6 +74,7 @@ type EndpointBase interface {
 	GetInputHeaderInfo() AnalyzedStruct
 	GetInputPathInfo() AnalyzedStruct
 	GetInputQueryInfo() AnalyzedStruct
+	GetBodyInputInfo() AnalyzedStruct
 	GetBodyOutputInfo() AnalyzedStruct
 	GetOutput() EndpointOutputBase
 	OkCode() int
@@ -128,6 +129,11 @@ func (e Endpoint[Input, Output]) GetInputQueryInfo() AnalyzedStruct {
 
 func (e Endpoint[Input, Output]) GetBodyOutputInfo() AnalyzedStruct {
 	var zero Output
+	return zero.GetBodyInfo()
+}
+
+func (e Endpoint[Input, Output]) GetBodyInputInfo() AnalyzedStruct {
+	var zero Input
 	return zero.GetBodyInfo()
 }
 

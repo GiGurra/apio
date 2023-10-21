@@ -49,6 +49,15 @@ type EndpointInputBase interface {
 	GetHeaderInfo() AnalyzedStruct
 	GetPathInfo() AnalyzedStruct
 	GetQueryInfo() AnalyzedStruct
+	GetBodyInfo() AnalyzedStruct
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetBodyInfo() AnalyzedStruct {
+	info, err := AnalyzeStruct(e.Body)
+	if err != nil {
+		panic(fmt.Errorf("failed to analyze body: %w", err))
+	}
+	return info
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetHeaderInfo() AnalyzedStruct {

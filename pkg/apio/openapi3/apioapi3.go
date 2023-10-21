@@ -223,24 +223,29 @@ func GetComponents(api apio.Api) map[string]any {
 
 	schemas := make(map[string]any)
 	for _, e := range api.Endpoints {
-		bodyInfo := e.GetBodyOutputInfo()
-		if bodyInfo.HasContent() {
-			props := make(map[string]any)
-			required := make([]string, 0)
+		bodyInfos := []apio.AnalyzedStruct{
+			e.GetBodyOutputInfo(),
+			e.GetBodyInputInfo(),
+		}
+		for _, bodyInfo := range bodyInfos {
+			if bodyInfo.HasContent() {
+				props := make(map[string]any)
+				required := make([]string, 0)
 
-			for _, field := range bodyInfo.Fields {
-				props[field.Name] = map[string]any{
-					"type": goTypeToOpenapiType(field.ValueType),
+				for _, field := range bodyInfo.Fields {
+					props[field.Name] = map[string]any{
+						"type": goTypeToOpenapiType(field.ValueType),
+					}
+					if field.IsRequired() {
+						required = append(required, field.Name)
+					}
 				}
-				if field.IsRequired() {
-					required = append(required, field.Name)
-				}
-			}
 
-			schemas[schemaNameOf(bodyInfo)] = Schema{
-				Type:       "object",
-				Properties: props,
-				Required:   required,
+				schemas[schemaNameOf(bodyInfo)] = Schema{
+					Type:       "object",
+					Properties: props,
+					Required:   required,
+				}
 			}
 		}
 	}
