@@ -21,6 +21,20 @@ type AnalyzedField struct {
 	IsPointer    bool
 }
 
+func (a *AnalyzedField) String() string {
+	result := a.Name + "{\n"
+	result += fmt.Sprintf(" Name: %v\n", a.Name)
+	result += fmt.Sprintf(" LKName: %v\n", a.LKName)
+	result += fmt.Sprintf(" FieldName: %v\n", a.FieldName)
+	result += fmt.Sprintf(" OverrideName: %v\n", a.OverrideName)
+	result += fmt.Sprintf(" Type: %v\n", a.Type)
+	result += fmt.Sprintf(" ValueType: %v\n", a.ValueType)
+	result += fmt.Sprintf(" Index: %v\n", a.Index)
+	result += fmt.Sprintf(" IsPointer: %v\n", a.IsPointer)
+	result += "}"
+	return result
+}
+
 func (a *AnalyzedField) IsRequired() bool {
 	return !a.IsPointer
 }
