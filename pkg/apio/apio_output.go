@@ -11,15 +11,6 @@ type EndpointOutputBase interface {
 	GetBody() ([]byte, error)
 }
 
-type EndpointOutput[
-	HeadersType any,
-	BodyType any,
-] struct {
-	Code    int
-	Headers HeadersType
-	Body    BodyType
-}
-
 func (e EndpointOutput[HeadersType, BodyType]) GetCode() int {
 	return e.Code
 }

@@ -21,7 +21,7 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 			}
 		}()
 
-		fmt.Printf("%s %s\n", endpoint.getMethod(), path)
+		fmt.Printf("attaching: %s %s\n", endpoint.getMethod(), path)
 		echoServer.Add(endpoint.getMethod(), path, func(ctx echo.Context) error {
 
 			headers := map[string][]string{}

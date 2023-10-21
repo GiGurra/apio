@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+type inputPayload struct {
+	Headers map[string][]string
+	Path    map[string]string
+	Query   map[string][]string
+	Body    []byte
+}
+
 type endpointInputBase interface {
 	getHeaders() any
 	getPath() any
@@ -13,18 +20,6 @@ type endpointInputBase interface {
 	getQuery() any
 	getBody() any
 	parse(payload inputPayload, pathBinding PathBinding) (any, error)
-}
-
-type EndpointInput[
-	HeadersType any,
-	PathType any,
-	QueryType any,
-	BodyType any,
-] struct {
-	Headers HeadersType
-	Path    PathType
-	Query   QueryType
-	Body    BodyType
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getHeaders() any {
@@ -112,4 +107,9 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getQuery() an
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getBody() any {
 	return e.Body
+}
+
+func calcPathBinding[Input endpointInputBase]() PathBinding {
+	var zero Input
+	return zero.calcPathBinding()
 }

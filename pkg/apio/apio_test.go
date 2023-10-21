@@ -67,7 +67,7 @@ func TestGetUserSetting(t *testing.T) {
 				BasePath: "/api/v1",
 			}},
 			IntBasePath: "/api/v1",
-		}.AddEndpoints(
+		}.WithEndpoints(
 			UserSettingEndpoints()...,
 		)
 

@@ -7,18 +7,83 @@ import (
 	"reflect"
 )
 
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+///// PUBLIC FOUNDATION TYPES
+
+type Api struct {
+	Published   []Server
+	IntBasePath string
+	Endpoints   []EndpointBase
+}
+
+type Server struct {
+	Scheme   string
+	Host     string
+	Port     int
+	BasePath string
+	HttpVer  string
+}
+
+func (a Api) WithEndpoints(endpoint ...EndpointBase) Api {
+	a.Endpoints = append(a.Endpoints, endpoint...)
+	return a
+}
+
+type ErrResp struct {
+	Code    int
+	Message string
+	IntErr  error
+}
+
+func (e ErrResp) Error() string {
+	return fmt.Sprintf("err response: %d: %s", e.Code, e.Message)
+}
+
+func NewError(code int, message string, intErr error) error {
+	return &ErrResp{
+		Code:    code,
+		Message: message,
+		IntErr:  intErr,
+	}
+}
+
 type EndpointBase interface {
 	getMethod() string
 	getPath() string
 	invoke(payload inputPayload) (EndpointOutputBase, error)
 }
 
-type inputPayload struct {
-	Headers map[string][]string
-	Path    map[string]string
-	Query   map[string][]string
-	Body    []byte
+type Endpoint[Input endpointInputBase, Output EndpointOutputBase] struct {
+	Method      string
+	Handler     func(Input) (Output, error)
+	pathBinding *PathBinding
 }
+
+type EndpointInput[
+	HeadersType any,
+	PathType any,
+	QueryType any,
+	BodyType any,
+] struct {
+	Headers HeadersType
+	Path    PathType
+	Query   QueryType
+	Body    BodyType
+}
+
+type EndpointOutput[
+	HeadersType any,
+	BodyType any,
+] struct {
+	Code    int
+	Headers HeadersType
+	Body    BodyType
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+///// PUBLIC HELPER TYPES (responses)
 
 type X any
 
@@ -50,23 +115,11 @@ func HeadersResponse[H any](headers H) EndpointOutput[H, X] {
 	}
 }
 
-type Endpoint[Input endpointInputBase, Output EndpointOutputBase] struct {
-	Method      string
-	Handler     func(Input) (Output, error)
-	pathBinding *PathBinding
-}
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+///// PRIVATE IMPL
 
-func calcPathBinding[Input endpointInputBase]() PathBinding {
-	var zero Input
-	return zero.calcPathBinding()
-}
-
-func (e Endpoint[Input, Output]) WithMethod(method string) Endpoint[Input, Output] {
-	e.Method = method
-	return e
-}
-
-func (e Endpoint[Input, Output]) GetPathBinding() PathBinding {
+func (e Endpoint[Input, Output]) getPathBinding() PathBinding {
 	if e.pathBinding == nil {
 		b := calcPathBinding[Input]()
 		e.pathBinding = &b
@@ -77,7 +130,7 @@ func (e Endpoint[Input, Output]) GetPathBinding() PathBinding {
 func (e Endpoint[Input, Output]) invoke(payload inputPayload) (EndpointOutputBase, error) {
 	var zeroInput Input
 	var zeroOutput Output
-	input, err := zeroInput.parse(payload, e.GetPathBinding())
+	input, err := zeroInput.parse(payload, e.getPathBinding())
 	if err != nil {
 		return zeroOutput, NewError(http.StatusBadRequest, fmt.Sprintf("failed to parse input: %v", err), err)
 	}
@@ -95,52 +148,10 @@ func (e Endpoint[Input, Output]) invoke(payload inputPayload) (EndpointOutputBas
 	return output, nil
 }
 
-func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, error)) Endpoint[Input, Output] {
-	e.Handler = handler
-	return e
-}
-
 func (e Endpoint[Input, Output]) getMethod() string {
 	return e.Method
 }
 
 func (e Endpoint[Input, Output]) getPath() string {
-	return e.GetPathBinding().FlatPath
-}
-
-type Server struct {
-	Scheme   string
-	Host     string
-	Port     int
-	BasePath string
-	HttpVer  string
-}
-
-type Api struct {
-	Published   []Server
-	IntBasePath string
-	Endpoints   []EndpointBase
-}
-
-func (a Api) AddEndpoints(endpoint ...EndpointBase) Api {
-	a.Endpoints = append(a.Endpoints, endpoint...)
-	return a
-}
-
-type ErrResp struct {
-	Code    int
-	Message string
-	IntErr  error
-}
-
-func (e ErrResp) Error() string {
-	return fmt.Sprintf("err response: %d: %s", e.Code, e.Message)
-}
-
-func NewError(code int, message string, intErr error) error {
-	return &ErrResp{
-		Code:    code,
-		Message: message,
-		IntErr:  intErr,
-	}
+	return e.getPathBinding().FlatPath
 }
