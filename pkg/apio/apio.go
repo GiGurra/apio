@@ -32,18 +32,18 @@ func (a Api) WithEndpoints(endpoint ...EndpointBase) Api {
 }
 
 type ErrResp struct {
-	Code   int
+	Status int
 	ClMsg  string
 	IntErr error
 }
 
 func (e ErrResp) Error() string {
-	return fmt.Sprintf("err response: %d: %s", e.Code, e.ClMsg)
+	return fmt.Sprintf("err response: %d: %s", e.Status, e.ClMsg)
 }
 
 func NewError(code int, message string, intErr error) error {
 	return &ErrResp{
-		Code:   code,
+		Status: code,
 		ClMsg:  message,
 		IntErr: intErr,
 	}

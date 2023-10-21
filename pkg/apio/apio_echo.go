@@ -73,7 +73,7 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				var errResp *ErrResp
 				if errors.As(err, &errResp) {
 					fmt.Printf("error response: %v\n", errResp)
-					return ctx.String(errResp.Code, errResp.ClMsg)
+					return ctx.String(errResp.Status, errResp.ClMsg)
 				} else {
 					fmt.Printf("error: %v\n", err)
 					return ctx.String(500, fmt.Sprintf("internal error, see server logs"))
