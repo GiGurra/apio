@@ -165,7 +165,7 @@ func main() {
 			Foo: ptr("foo"),
 			Bar: 123,
 		},
-		X{}, // No body sent (this is a GET call)
+		Empty, // No body sent (this is a GET call)
 	)
 
 	res, err := GetEndpointSpec.Call(server, input) // Won't compile if types don't match

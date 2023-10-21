@@ -33,7 +33,7 @@ func main() {
 			Foo: ptr("foo"),
 			Bar: 123,
 		},
-		X{},
+		Empty, // no body in this get call
 	)
 
 	res, err := GetEndpointSpec.Call(server, input)

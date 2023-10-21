@@ -118,6 +118,8 @@ func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, error)
 
 type X struct{}
 
+var Empty = X{}
+
 func EmptyResponse() EndpointOutput[X, X] {
 	return EndpointOutput[X, X]{
 		Code: 204,
