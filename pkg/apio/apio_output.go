@@ -80,11 +80,10 @@ func (e EndpointOutput[HeadersType, BodyType]) SetHeaders(hdrs map[string][]stri
 						// Check if it is a pointer first, in which case we need to set it using an address
 						if reflect.ValueOf(e.Headers).Field(i).Kind() == reflect.Ptr {
 							reflect.ValueOf(&e.Headers).Elem().Field(i).Set(reflect.ValueOf(newValuePtr))
-							break
 						} else {
 							reflect.ValueOf(&e.Headers).Elem().Field(i).Set(reflect.ValueOf(newValuePtr).Elem())
-							break
 						}
+						break
 					}
 				}
 			}
