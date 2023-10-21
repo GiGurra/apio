@@ -191,7 +191,7 @@ func GetPaths(api apio.Api) map[string]any {
 				"application/json": map[string]any{
 					"schema": map[string]any{
 						"type": "object",
-						"$ref": "#/components/schemas/" + bodyInfo.Pkg + "/" + bodyInfo.Name,
+						"$ref": "#/components/schemas/" + schemaNameOf(bodyInfo),
 					},
 				},
 			}
@@ -215,10 +215,12 @@ func GetPaths(api apio.Api) map[string]any {
 }
 
 func GetComponents(api apio.Api) map[string]any {
-	// TODO: Implement lalalalaal too much
-	return map[string]any{
-		"schemas": map[string]any{
-			"User": Schema{
+
+	schemas := make(map[string]any)
+	for _, e := range api.Endpoints {
+		bodyInfo := e.GetBodyOutputInfo()
+		if bodyInfo.HasContent() {
+			schemas[schemaNameOf(bodyInfo)] = Schema{
 				Type: "object",
 				Properties: map[string]any{
 					"id": map[string]any{
@@ -231,7 +233,22 @@ func GetComponents(api apio.Api) map[string]any {
 						"type": "string",
 					},
 				},
-			},
-		},
+			}
+		}
 	}
+
+	return map[string]any{
+		"schemas": schemas,
+	}
+}
+
+func schemaNameOf(structInfo apio.AnalyzedStruct) string {
+	raw := structInfo.Pkg + "/" + structInfo.Name
+	// keep only alphanumeric characters, underscores and '-'s. Replace all other characters with '_'
+	return strings.Map(func(r rune) rune {
+		if r == '-' || r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= 9) {
+			return r
+		}
+		return '_'
+	}, raw)
 }
