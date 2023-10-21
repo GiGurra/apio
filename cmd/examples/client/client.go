@@ -19,21 +19,22 @@ func main() {
 		HttpVer:  "1.1",
 	}
 
-	input := EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X]{
-		Headers: UserSettingHeaders{
+	input := NewInput(
+		UserSettingHeaders{
 			Yo:          "yo",
 			ContentType: "application/json",
 		},
-		Path: UserSettingPath{
+		UserSettingPath{
 			User:       123,
 			SettingCat: "cat",
 			SettingId:  "id",
 		},
-		Query: UserSettingQuery{
+		UserSettingQuery{
 			Foo: ptr("foo"),
 			Bar: 123,
 		},
-	}
+		X{},
+	)
 
 	res, err := GetEndpointSpec.Call(server, input)
 	if err != nil {

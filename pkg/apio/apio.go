@@ -97,6 +97,20 @@ type EndpointOutput[
 ////////////////////////////////////////////////////////////////////////////////////
 ///// PUBLIC HELPER TYPES (responses)
 
+func NewInput[HeadersType, PathType, QueryType, BodyType any](
+	headers HeadersType,
+	path PathType,
+	query QueryType,
+	body BodyType,
+) EndpointInput[HeadersType, PathType, QueryType, BodyType] {
+	return EndpointInput[HeadersType, PathType, QueryType, BodyType]{
+		Headers: headers,
+		Path:    path,
+		Query:   query,
+		Body:    body,
+	}
+}
+
 func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, error)) Endpoint[Input, Output] {
 	e.Handler = handler
 	return e
