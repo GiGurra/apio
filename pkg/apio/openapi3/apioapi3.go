@@ -14,9 +14,8 @@ type OpenApi struct {
 }
 
 type Server struct {
-	URL         string                 `json:"url" yaml:"url" text:"url"`
-	Description string                 `json:"description" yaml:"description" text:"description"`
-	Variables   map[string]interface{} `json:"variables,omitempty" yaml:"variables" text:"variables"`
+	URL         string `json:"url" yaml:"url" text:"url"`
+	Description string `json:"description" yaml:"description" text:"description"`
 }
 
 type Schema struct {
@@ -51,7 +50,6 @@ func ToOpenApi3(api apio.Api) OpenApi {
 		servers[i] = Server{
 			URL:         server.Scheme + "://" + server.Host + ":" + strconv.Itoa(server.Port) + server.BasePath,
 			Description: server.Name + " - " + server.Description,
-			Variables:   server.Properties(),
 		}
 	}
 
