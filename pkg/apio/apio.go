@@ -51,14 +51,16 @@ func NewError(code int, message string, intErr error) error {
 
 type EndpointBase interface {
 	getMethod() string
-	getPath() string
+	getPathPattern() string
+	getQueryPattern() string
 	invoke(payload inputPayload) (EndpointOutputBase, error)
 }
 
 type Endpoint[Input endpointInputBase, Output EndpointOutputBase] struct {
-	Method      string
-	Handler     func(Input) (Output, error)
-	pathBinding *PathBindings
+	Method        string
+	Handler       func(Input) (Output, error)
+	pathBindings  *PathBindings
+	queryBindings *QueryBindings
 }
 
 type EndpointInput[
@@ -86,7 +88,7 @@ type EndpointOutput[
 ////////////////////////////////////////////////////////////////////////////////////
 ///// PUBLIC HELPER TYPES (responses)
 
-type X any
+type X struct{}
 
 func EmptyResponse() EndpointOutput[X, X] {
 	return EndpointOutput[X, X]{
@@ -121,17 +123,25 @@ func HeadersResponse[H any](headers H) EndpointOutput[H, X] {
 ///// PRIVATE IMPL
 
 func (e Endpoint[Input, Output]) getPathBindings() PathBindings {
-	if e.pathBinding == nil {
+	if e.pathBindings == nil {
 		b := calcPathBindings[Input]()
-		e.pathBinding = &b
+		e.pathBindings = &b
 	}
-	return *e.pathBinding
+	return *e.pathBindings
+}
+
+func (e Endpoint[Input, Output]) getQueryBindings() QueryBindings {
+	if e.queryBindings == nil {
+		b := calcQueryBindings[Input]()
+		e.queryBindings = &b
+	}
+	return *e.queryBindings
 }
 
 func (e Endpoint[Input, Output]) invoke(payload inputPayload) (EndpointOutputBase, error) {
 	var zeroInput Input
 	var zeroOutput Output
-	input, err := zeroInput.parse(payload, e.getPathBindings())
+	input, err := zeroInput.parse(payload, e.getPathBindings(), e.getQueryBindings())
 	if err != nil {
 		return zeroOutput, NewError(http.StatusBadRequest, fmt.Sprintf("failed to parse input: %v", err), err)
 	}
@@ -155,6 +165,10 @@ func (e Endpoint[Input, Output]) getMethod() string {
 	return e.Method
 }
 
-func (e Endpoint[Input, Output]) getPath() string {
+func (e Endpoint[Input, Output]) getPathPattern() string {
 	return e.getPathBindings().FlatPath
+}
+
+func (e Endpoint[Input, Output]) getQueryPattern() string {
+	return e.getQueryBindings().FlatPath
 }

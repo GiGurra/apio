@@ -6,9 +6,11 @@ import (
 	"reflect"
 )
 
-type fieldSetter = func(target reflect.Value, from string) error
+type pathFieldSetter = func(target reflect.Value, from string) error
 
-func getFromStringFieldSetter(field reflect.StructField) fieldSetter {
+type queryFieldSetter = func(target reflect.Value, from *string) error
+
+func getFromStringPathFieldSetter(field reflect.StructField) pathFieldSetter {
 	parseFn, err := getStringParsePtrFn(field.Type)
 	if err != nil {
 		panic(fmt.Errorf("failed to get parse function for field '%s': %w", field.Name, err))
@@ -20,6 +22,37 @@ func getFromStringFieldSetter(field reflect.StructField) fieldSetter {
 			return fmt.Errorf("failed to parse '%s' into field %s [%t]: %w", from, field.Name, field.Type, err)
 		}
 		target.Set(reflect.ValueOf(parsedPtr).Elem())
+		return nil
+	}
+}
+
+func getFromStringQueryFieldSetter(field reflect.StructField) queryFieldSetter {
+	parseFn, err := getStringParsePtrFn(field.Type)
+	if err != nil {
+		panic(fmt.Errorf("failed to get parse function for field '%s': %w", field.Name, err))
+	}
+
+	return func(target reflect.Value, from *string) error {
+
+		if from == nil {
+			// Check that target is a pointer (=optional)
+			if target.Kind() != reflect.Ptr {
+				return fmt.Errorf("missing required query parameter '%s'", field.Name)
+			} else {
+				// Leave the target at nil/zero/unset
+				return nil
+			}
+		}
+
+		parsedPtr, err := parseFn(*from)
+		if err != nil {
+			return fmt.Errorf("failed to parse '%s' into field %s [%t]: %w", *from, field.Name, field.Type, err)
+		}
+		if target.Kind() == reflect.Ptr {
+			target.Set(reflect.ValueOf(parsedPtr))
+		} else {
+			target.Set(reflect.ValueOf(parsedPtr).Elem())
+		}
 		return nil
 	}
 }

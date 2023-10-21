@@ -22,13 +22,15 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 
 		path := func() string {
 			if api.IntBasePath == "" {
-				return endpoint.getPath()
+				return endpoint.getPathPattern()
 			} else {
-				return api.IntBasePath + "/" + strings.TrimPrefix(endpoint.getPath(), "/")
+				return api.IntBasePath + "/" + strings.TrimPrefix(endpoint.getPathPattern(), "/")
 			}
 		}()
 
-		fmt.Printf(" * attaching endpoint: %s %s\n", endpoint.getMethod(), path)
+		pathWithQueryParams := path + endpoint.getQueryPattern()
+
+		fmt.Printf(" * attaching endpoint: %s %s\n", endpoint.getMethod(), pathWithQueryParams)
 		echoServer.Add(endpoint.getMethod(), path, func(ctx echo.Context) error {
 
 			body := ctx.Request().Body
