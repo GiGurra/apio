@@ -20,13 +20,13 @@ type Query struct {
 }
 
 type Body struct {
-	Value any     `json:"value"`
+	Value string  `json:"value"`
 	Type  string  `json:"type"`
 	Opt   *string `json:"opt"`
 }
 
 type Headers struct {
-	Yo          any
+	Yo          string
 	ContentType string `name:"Content-Type"`
 }
 

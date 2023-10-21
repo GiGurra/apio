@@ -116,6 +116,8 @@ func goTypeToOpenapiType(t reflect.Type) string {
 		return "number"
 	case reflect.String:
 		return "string"
+	case reflect.Interface:
+		fallthrough
 	case reflect.Struct:
 		return "object"
 	case reflect.Ptr:
@@ -128,25 +130,43 @@ func goTypeToOpenapiType(t reflect.Type) string {
 }
 
 func GetParameters(api apio.EndpointBase) []Parameter {
-	info := api.GetInputPathInfo()
 	result := make([]Parameter, 0)
 
-	// TODO: Add header parameters
+	for _, field := range api.GetInputHeaderInfo().Fields {
+		result = append(result, Parameter{
+			Name:        field.Name,
+			In:          "header",
+			Description: field.Name,
+			Required:    true,
+			Schema: map[string]any{
+				"type": goTypeToOpenapiType(field.ValueType),
+			},
+		})
+	}
 
-	// Add path parameters
-	for _, field := range info.Fields {
+	for _, field := range api.GetInputPathInfo().Fields {
 		result = append(result, Parameter{
 			Name:        field.Name,
 			In:          "path",
 			Description: field.Name,
 			Required:    true,
 			Schema: map[string]any{
-				"type": goTypeToOpenapiType(field.Type),
+				"type": goTypeToOpenapiType(field.ValueType),
 			},
 		})
 	}
 
-	// TODO: Add query parameters
+	for _, field := range api.GetInputQueryInfo().Fields {
+		result = append(result, Parameter{
+			Name:        field.Name,
+			In:          "query",
+			Description: field.Name,
+			Required:    field.IsRequired(),
+			Schema: map[string]any{
+				"type": goTypeToOpenapiType(field.ValueType),
+			},
+		})
+	}
 
 	return result
 }
