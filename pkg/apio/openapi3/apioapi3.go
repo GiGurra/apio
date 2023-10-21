@@ -34,6 +34,11 @@ type Parameter struct {
 	Schema      map[string]any `json:"schema" yaml:"schema" text:"schema"`
 }
 
+type RequestBody struct {
+	Description string         `json:"description" yaml:"description" text:"description"`
+	Content     map[string]any `json:"content" yaml:"content" text:"content"`
+}
+
 type Response struct {
 	Description string         `json:"description" yaml:"description" text:"description"`
 	Content     map[string]any `json:"content" yaml:"content" text:"content"`
@@ -44,6 +49,7 @@ type Operation struct {
 	Description string              `json:"description" yaml:"description" text:"description"`
 	OperationId string              `json:"operationId" yaml:"operationId" text:"operation_id"`
 	Parameters  []Parameter         `json:"parameters" yaml:"parameters" text:"parameters"`
+	RequestBody *RequestBody        `json:"requestBody,omitempty" yaml:"requestBody,omitempty" text:"requestBody,omitempty"`
 	Responses   map[string]Response `json:"responses" yaml:"responses" text:"responses"`
 }
 
@@ -190,17 +196,19 @@ func GetPaths(api apio.Api) map[string]any {
 		}
 		methods := result[path].(map[string]any)
 
-		bodyInfo := e.GetBodyOutputInfo()
-		content := make(map[string]any)
-		if bodyInfo.HasContent() {
-			content = map[string]any{
+		outputBodyInfo := e.GetBodyOutputInfo()
+		outputContent := make(map[string]any)
+		if outputBodyInfo.HasContent() {
+			outputContent = map[string]any{
 				"application/json": map[string]any{
 					"schema": map[string]any{
-						"$ref": "#/components/schemas/" + schemaNameOf(bodyInfo),
+						"$ref": "#/components/schemas/" + schemaNameOf(outputBodyInfo),
 					},
 				},
 			}
 		}
+
+		inputBodyInfo := e.GetBodyInputInfo()
 
 		methods[strings.ToLower(e.GetMethod())] = Operation{
 			Summary:     e.GetSummary(),
@@ -210,9 +218,25 @@ func GetPaths(api apio.Api) map[string]any {
 			Responses: map[string]Response{
 				strconv.Itoa(e.OkCode()): {
 					Description: e.GetOutput().GetDescription(),
-					Content:     content,
+					Content:     outputContent,
 				},
 			},
+			RequestBody: func() *RequestBody {
+				if inputBodyInfo.HasContent() {
+					return &RequestBody{
+						Description: e.GetInput().GetDescription(),
+						Content: map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{
+									"$ref": "#/components/schemas/" + schemaNameOf(inputBodyInfo),
+								},
+							},
+						},
+					}
+				} else {
+					return nil
+				}
+			}(),
 		}
 	}
 

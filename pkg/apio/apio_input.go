@@ -50,6 +50,11 @@ type EndpointInputBase interface {
 	GetPathInfo() AnalyzedStruct
 	GetQueryInfo() AnalyzedStruct
 	GetBodyInfo() AnalyzedStruct
+	GetDescription() string
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetDescription() string {
+	return e.Description
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetBodyInfo() AnalyzedStruct {

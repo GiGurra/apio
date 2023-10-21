@@ -77,6 +77,7 @@ type EndpointBase interface {
 	GetBodyInputInfo() AnalyzedStruct
 	GetBodyOutputInfo() AnalyzedStruct
 	GetOutput() EndpointOutputBase
+	GetInput() EndpointInputBase
 	OkCode() int
 }
 
@@ -94,6 +95,11 @@ type Endpoint[Input EndpointInputBase, Output EndpointOutputBase] struct {
 
 func (e Endpoint[Input, Output]) GetOutput() EndpointOutputBase {
 	var zero Output
+	return zero
+}
+
+func (e Endpoint[Input, Output]) GetInput() EndpointInputBase {
+	var zero Input
 	return zero
 }
 
@@ -155,10 +161,11 @@ type EndpointInput[
 	QueryType any,
 	BodyType any,
 ] struct {
-	Headers HeadersType
-	Path    PathType
-	Query   QueryType
-	Body    BodyType
+	Headers     HeadersType
+	Path        PathType
+	Query       QueryType
+	Body        BodyType
+	Description string
 }
 
 type EndpointOutput[
