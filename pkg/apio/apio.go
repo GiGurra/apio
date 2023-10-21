@@ -65,14 +65,23 @@ type Endpoint[Input, Output any] struct {
 	path    string
 }
 
+func calcPath[P any]() string {
+	return "" // todo calc path
+}
+
 func (e Endpoint[Input, Output]) WithMethod(method string) Endpoint[Input, Output] {
-	// TODO calc and set path
 	e.Method = method
+	if e.path == "" {
+		e.path = calcPath[Input]()
+	}
 	return e
 }
 
 func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, error)) Endpoint[Input, Output] {
 	e.Handler = handler
+	if e.path == "" {
+		e.path = calcPath[Input]()
+	}
 	return e
 }
 
