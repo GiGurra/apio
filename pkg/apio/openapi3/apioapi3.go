@@ -134,6 +134,11 @@ func GetParameters(api apio.EndpointBase) []Parameter {
 	result := make([]Parameter, 0)
 
 	for _, field := range api.GetInputHeaderInfo().Fields {
+
+		if field.LKName == "Content-Type" {
+			continue // OpenAPI 3 spec doesn't permit this here
+		}
+
 		result = append(result, Parameter{
 			Name:        field.Name,
 			In:          "header",
