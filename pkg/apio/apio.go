@@ -10,6 +10,14 @@ type EndpointBase interface {
 	GetPath() string
 }
 
+type EndpointInputBase interface {
+	GetHeaders() any
+	GetPath() any
+	GetPathPattern() string
+	GetQuery() any
+	GetBody() any
+}
+
 type EndpointInput[
 	HeadersType any,
 	PathType any,
@@ -22,7 +30,33 @@ type EndpointInput[
 	Body    BodyType
 }
 
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetHeaders() any {
+	return e.Headers
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPath() any {
+	return e.Path
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPathPattern() string {
+	return "" //TODO: calc path pattern
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetQuery() any {
+	return e.Query
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetBody() any {
+	return e.Body
+}
+
 type X any
+
+type EndpoitOutputBase interface {
+	GetCode() int
+	GetHeaders() any
+	GetBody() any
+}
 
 type EndpointOutput[
 	HeadersType any,
@@ -31,6 +65,18 @@ type EndpointOutput[
 	Code    int
 	Headers HeadersType
 	Body    BodyType
+}
+
+func (e EndpointOutput[HeadersType, BodyType]) GetCode() int {
+	return e.Code
+}
+
+func (e EndpointOutput[HeadersType, BodyType]) GetHeaders() any {
+	return e.Headers
+}
+
+func (e EndpointOutput[HeadersType, BodyType]) GetBody() any {
+	return e.Body
 }
 
 func EmptyResponse() EndpointOutput[X, X] {
@@ -59,20 +105,21 @@ func HeadersResponse[H any](headers H) EndpointOutput[H, X] {
 	}
 }
 
-type Endpoint[Input, Output any] struct {
+type Endpoint[Input EndpointInputBase, Output EndpoitOutputBase] struct {
 	Method  string
 	Handler func(Input) (Output, error)
 	path    string
 }
 
-func calcPath[P any]() string {
-	return "" // todo calc path
+func calcPathPattern[Input EndpointInputBase]() string {
+	var zero Input
+	return zero.GetPathPattern()
 }
 
 func (e Endpoint[Input, Output]) WithMethod(method string) Endpoint[Input, Output] {
 	e.Method = method
 	if e.path == "" {
-		e.path = calcPath[Input]()
+		e.path = calcPathPattern[Input]()
 	}
 	return e
 }
@@ -80,7 +127,7 @@ func (e Endpoint[Input, Output]) WithMethod(method string) Endpoint[Input, Outpu
 func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, error)) Endpoint[Input, Output] {
 	e.Handler = handler
 	if e.path == "" {
-		e.path = calcPath[Input]()
+		e.path = calcPathPattern[Input]()
 	}
 	return e
 }

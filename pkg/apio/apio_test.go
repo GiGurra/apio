@@ -6,21 +6,21 @@ import (
 	"testing"
 )
 
+// represents "/users/:collection/settings/:category/:value"
+type Path struct {
+	_          any `path:"/users"`
+	collection int
+	_          any `path:"/settings"`
+	category   string
+	value      string
+}
+
+type UserSettingBody struct {
+	Value any    `json:"value"`
+	Type  string `json:"type"`
+}
+
 func UserSettingEndpoints() []EndpointBase {
-
-	// represents "/users/:collection/settings/:category/:value"
-	type Path struct {
-		_          any `path:"/users"`
-		collection int
-		_          any `path:"/settings"`
-		category   string
-		value      string
-	}
-
-	type UserSettingBody struct {
-		Value any    `json:"value"`
-		Type  string `json:"type"`
-	}
 
 	return []EndpointBase{
 
