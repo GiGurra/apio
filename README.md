@@ -1,7 +1,12 @@
 # apio
 
-This is an experimental declarative server-side http API library for Go.
+This is a **very** experimental declarative server- and client-side http API library for Go.
 It is inspired by Tapir (scala).
+
+You define your API in a type-safe way with declarative Go code, and then
+get access to type safe client and server APIs in go (no code generation).
+
+You can also generate a swagger spec from the API definition.
 
 It asks the question:
 
