@@ -22,14 +22,15 @@ func UserSettingEndpoints() []EndpointBase {
 				}), nil
 			}),
 
-		user_setting.Put.WithHandler(func(
-			input EndpointInput[X, user_setting.Path, X, user_setting.Body],
-		) (EndpointOutput[user_setting.RespHeaders, X], error) {
-			fmt.Printf("invoked PUT path with input: %+v\n", input)
-			return HeadersResponse(user_setting.RespHeaders{
-				ContentType: "application/json",
-			}), nil
-		}),
+		user_setting.Put.
+			WithHandler(func(
+				input EndpointInput[X, user_setting.Path, X, user_setting.Body],
+			) (EndpointOutput[user_setting.RespHeaders, X], error) {
+				fmt.Printf("invoked PUT path with input: %+v\n", input)
+				return HeadersResponse(user_setting.RespHeaders{
+					ContentType: "application/json",
+				}), nil
+			}),
 	}
 }
 
