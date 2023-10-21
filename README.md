@@ -8,7 +8,7 @@ because it is too much work and just inventing a solution for a non-existing pro
 You define your API in a type-safe way with declarative Go code, and then
 get access to type safe client and server APIs in go (no code generation).
 
-You can also (in theory ;)) generate a swagger spec from the API definition.
+You can also (in theory ;)) generate an OpenAPI/swagger spec from the API definition.
 
 It asks the question:
 
