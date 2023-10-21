@@ -46,6 +46,33 @@ type EndpointInputBase interface {
 		queryBindings QueryBindings,
 	) (any, error)
 	ToPayload() (InputPayload, error)
+	GetHeaderInfo() AnalyzedStruct
+	GetPathInfo() AnalyzedStruct
+	GetQueryInfo() AnalyzedStruct
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetHeaderInfo() AnalyzedStruct {
+	info, err := AnalyzeStruct(e.Headers)
+	if err != nil {
+		panic(fmt.Errorf("failed to analyze headers: %w", err))
+	}
+	return info
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPathInfo() AnalyzedStruct {
+	info, err := AnalyzeStruct(e.Path)
+	if err != nil {
+		panic(fmt.Errorf("failed to analyze path: %w", err))
+	}
+	return info
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetQueryInfo() AnalyzedStruct {
+	info, err := AnalyzeStruct(e.Query)
+	if err != nil {
+		panic(fmt.Errorf("failed to analyze query: %w", err))
+	}
+	return info
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getHeaders() any {

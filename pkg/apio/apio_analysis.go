@@ -163,18 +163,23 @@ func AnalyzeStruct[T any](t T) (AnalyzedStruct, error) {
 		return cached.(AnalyzedStruct), nil
 	}
 
-	fields := make([]AnalyzedField, tpe.NumField())
+	fields := make([]AnalyzedField, 0)
 	fieldsByFieldName := make(map[string]AnalyzedField)
 	fieldsByName := make(map[string]AnalyzedField)
 	fieldsByLKName := make(map[string]AnalyzedField)
 
 	for i := 0; i < tpe.NumField(); i++ {
 		field := tpe.Field(i)
+
+		if field.Name == "_" {
+			continue
+		}
+
 		analyzed, err := AnalyzeField(t, i)
 		if err != nil {
 			return AnalyzedStruct{}, fmt.Errorf("failed to analyze field %v: %v", field.Name, err)
 		}
-		fields[i] = analyzed
+		fields = append(fields, analyzed)
 		fieldsByFieldName[analyzed.FieldName] = analyzed
 		fieldsByName[analyzed.Name] = analyzed
 		if _, ok := fieldsByLKName[analyzed.LKName]; ok {

@@ -2,7 +2,6 @@ package openapi3
 
 import (
 	"github.com/GiGurra/apio/pkg/apio"
-	"reflect"
 	"strconv"
 	"strings"
 )
@@ -86,13 +85,28 @@ func apioPattern2OpenApi3Pattern(pattern string) string {
 	return result
 }
 
-func GetStructName[T any]() string {
-	var i T
-	t := reflect.TypeOf(i)
-	if t.Kind() == reflect.Ptr {
-		return t.Elem().Name()
+func GetParameters(api apio.EndpointBase) []Parameter {
+	info := api.GetInputPathInfo()
+	result := make([]Parameter, 0)
+
+	// TODO: Add header parameters
+
+	// Add path parameters
+	for _, field := range info.Fields {
+		result = append(result, Parameter{
+			Name:        field.Name,
+			In:          "path",
+			Description: field.Name,
+			Required:    true,
+			Schema: map[string]any{
+				"type": field.Type.Name(),
+			},
+		})
 	}
-	return t.Name()
+
+	// TODO: Add query parameters
+
+	return result
 }
 
 func GetPaths(api apio.Api) map[string]any {
@@ -111,7 +125,7 @@ func GetPaths(api apio.Api) map[string]any {
 			Summary:     e.GetSummary(),
 			Description: e.GetDescription(),
 			OperationId: e.GetId(),
-			//Parameters:  GetParameters(e),
+			Parameters:  GetParameters(e),
 			//Responses: map[string]Response{
 			//	"200": {
 			//		Description: "A list of users",

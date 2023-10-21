@@ -71,6 +71,9 @@ type EndpointBase interface {
 	GetDescription() string
 	Handle(payload InputPayload) (EndpointOutputBase, error)
 	validate()
+	GetInputHeaderInfo() AnalyzedStruct
+	GetInputPathInfo() AnalyzedStruct
+	GetInputQueryInfo() AnalyzedStruct
 }
 
 type Endpoint[Input EndpointInputBase, Output EndpointOutputBase] struct {
@@ -93,6 +96,21 @@ func (e Endpoint[Input, Output]) GetId() string {
 	} else {
 		return e.Method + "-" + e.GetPathPattern()
 	}
+}
+
+func (e Endpoint[Input, Output]) GetInputHeaderInfo() AnalyzedStruct {
+	var zero Input
+	return zero.GetHeaderInfo()
+}
+
+func (e Endpoint[Input, Output]) GetInputPathInfo() AnalyzedStruct {
+	var zero Input
+	return zero.GetPathInfo()
+}
+
+func (e Endpoint[Input, Output]) GetInputQueryInfo() AnalyzedStruct {
+	var zero Input
+	return zero.GetQueryInfo()
 }
 
 func (e Endpoint[Input, Output]) GetName() string {
