@@ -144,6 +144,8 @@ func (e Endpoint[Input, Output]) invoke(payload inputPayload) (EndpointOutputBas
 		var errResp *ErrResp
 		if errors.As(err, &errResp) {
 			return zeroOutput, errResp
+		} else {
+			return zeroOutput, NewError(http.StatusInternalServerError, fmt.Sprintf("failed to invoke handler: %v", err), err)
 		}
 	}
 	return output, nil
