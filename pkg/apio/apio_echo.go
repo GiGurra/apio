@@ -31,6 +31,14 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 		fmt.Printf(" * attaching endpoint: %s %s\n", endpoint.getMethod(), path)
 		echoServer.Add(endpoint.getMethod(), path, func(ctx echo.Context) error {
 
+			body := ctx.Request().Body
+			defer func(body io.ReadCloser) {
+				err := body.Close()
+				if err != nil {
+					fmt.Printf("error closing body: %v", err)
+				}
+			}(body)
+
 			headers := map[string][]string{}
 			for k, v := range ctx.Request().Header {
 				headers[k] = v
@@ -48,14 +56,6 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 			for k, v := range ctx.QueryParams() {
 				queryParams[k] = v
 			}
-
-			body := ctx.Request().Body
-			defer func(body io.ReadCloser) {
-				err := body.Close()
-				if err != nil {
-					fmt.Printf("error closing body: %v", err)
-				}
-			}(body)
 
 			bodyBytes, err := io.ReadAll(body)
 			if err != nil {
