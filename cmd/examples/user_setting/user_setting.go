@@ -37,9 +37,19 @@ type RespHeaders struct {
 var Get = Endpoint[
 	EndpointInput[Headers, Path, Query, X],
 	EndpointOutput[X, Body],
-]{Method: http.MethodGet}
+]{
+	Method:      http.MethodGet,
+	ID:          "getUserSetting",
+	Summary:     "Get a user setting",
+	Description: "This operation retrieves a user setting",
+}
 
 var Put = Endpoint[
 	EndpointInput[X, Path, X, Body],
 	EndpointOutput[RespHeaders, X],
-]{Method: http.MethodPut}
+]{
+	Method:      http.MethodPut,
+	ID:          "putUserSetting",
+	Summary:     "Replace a user setting",
+	Description: "This operation replaces a user setting",
+}

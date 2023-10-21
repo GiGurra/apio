@@ -96,29 +96,88 @@ func GetStructName[T any]() string {
 }
 
 func GetPaths(api apio.Api) map[string]any {
+
+	result := make(map[string]any)
+	for _, e := range api.Endpoints {
+		path := apioPattern2OpenApi3Pattern(e.GetPathPattern())
+		if path[0] != '/' {
+			path = "/" + path
+		}
+		if _, ok := result[path]; !ok {
+			result[path] = make(map[string]any)
+		}
+		methods := result[path].(map[string]any)
+		methods[strings.ToLower(e.GetMethod())] = Operation{
+			Summary:     e.GetSummary(),
+			Description: e.GetDescription(),
+			OperationId: e.GetId(),
+			//Parameters:  GetParameters(e),
+			//Responses: map[string]Response{
+			//	"200": {
+			//		Description: "A list of users",
+			//		Content: map[string]any{
+			//			"application/json": map[string]any{
+			//				"schema": map[string]any{
+			//					"type": "array",
+			//					"items": map[string]any{
+			//						"$ref": "#/components/schemas/User",
+			//					},
+			//				},
+			//			},
+			//		},
+			//	},
+			//},
+		}
+	}
+
+	return result
 	//
-	//result := make(map[string]any)
-	//for _, e := range api.Endpoints {
-	//	path := apioPattern2OpenApi3Pattern(e.GetPathPattern())
-	//	if path[0] != '/' {
-	//		path = "/" + path
-	//	}
-	//	if _, ok := result[path]; !ok {
-	//		result[path] = make(map[string]Operation)
-	//	}
-	//	result[path].(map[string]Operation)[e.GetMethod()] = Operation{
-	//		Summary:     e.Summary,
-	//		Description: e.Description,
-	//		OperationId: e.OperationId,
-	//		Parameters:  GetParameters(e),
-	//		Responses: map[string]Response{
-	//			"200": {
-	//				Description: "A list of users",
-	//				Content: map[string]any{
-	//					"application/json": map[string]any{
-	//						"schema": map[string]any{
-	//							"type": "array",
-	//							"items": map[string]any{
+	//return map[string]any{
+	//	"/users": map[string]Operation{
+	//		"get": {
+	//			Summary:     "List all users",
+	//			Description: "This operation lists all users in the system",
+	//			OperationId: "listUsers",
+	//			Parameters:  []Parameter{},
+	//			Responses: map[string]Response{
+	//				"200": {
+	//					Description: "A list of users",
+	//					Content: map[string]any{
+	//						"application/json": map[string]any{
+	//							"schema": map[string]any{
+	//								"type": "array",
+	//								"items": map[string]any{
+	//									"$ref": "#/components/schemas/User",
+	//								},
+	//							},
+	//						},
+	//					},
+	//				},
+	//			},
+	//		},
+	//	},
+	//	"/users/{id}": map[string]Operation{
+	//		"get": {
+	//			Summary:     "Get a user by ID",
+	//			Description: "This operation retrieves a user by ID",
+	//			OperationId: "getUser",
+	//			Parameters: []Parameter{
+	//				{
+	//					Name:        "id",
+	//					In:          "path",
+	//					Description: "User ID",
+	//					Required:    true,
+	//					Schema: map[string]any{
+	//						"type": "integer",
+	//					},
+	//				},
+	//			},
+	//			Responses: map[string]Response{
+	//				"200": {
+	//					Description: "A user",
+	//					Content: map[string]any{
+	//						"application/json": map[string]any{
+	//							"schema": map[string]any{
 	//								"$ref": "#/components/schemas/User",
 	//							},
 	//						},
@@ -126,64 +185,8 @@ func GetPaths(api apio.Api) map[string]any {
 	//				},
 	//			},
 	//		},
-	//	}
+	//	},
 	//}
-
-	return map[string]any{
-		"/users": map[string]Operation{
-			"get": {
-				Summary:     "List all users",
-				Description: "This operation lists all users in the system",
-				OperationId: "listUsers",
-				Parameters:  []Parameter{},
-				Responses: map[string]Response{
-					"200": {
-						Description: "A list of users",
-						Content: map[string]any{
-							"application/json": map[string]any{
-								"schema": map[string]any{
-									"type": "array",
-									"items": map[string]any{
-										"$ref": "#/components/schemas/User",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"/users/{id}": map[string]Operation{
-			"get": {
-				Summary:     "Get a user by ID",
-				Description: "This operation retrieves a user by ID",
-				OperationId: "getUser",
-				Parameters: []Parameter{
-					{
-						Name:        "id",
-						In:          "path",
-						Description: "User ID",
-						Required:    true,
-						Schema: map[string]any{
-							"type": "integer",
-						},
-					},
-				},
-				Responses: map[string]Response{
-					"200": {
-						Description: "A user",
-						Content: map[string]any{
-							"application/json": map[string]any{
-								"schema": map[string]any{
-									"$ref": "#/components/schemas/User",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
 }
 
 func GetComponents(api apio.Api) map[string]any {

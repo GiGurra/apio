@@ -65,16 +65,46 @@ type EndpointBase interface {
 	GetMethod() string
 	GetPathPattern() string
 	GetQueryPattern() string
+	GetId() string
+	GetName() string
+	GetSummary() string
+	GetDescription() string
 	Handle(payload InputPayload) (EndpointOutputBase, error)
 	validate()
 }
 
 type Endpoint[Input EndpointInputBase, Output EndpointOutputBase] struct {
+	ID             string
+	Name           string
+	Summary        string
+	Description    string
 	Method         string
 	Handler        func(Input) (Output, error)
 	headerBindings *HeaderBindings
 	pathBindings   *PathBindings
 	queryBindings  *QueryBindings
+}
+
+func (e Endpoint[Input, Output]) GetId() string {
+	if e.ID != "" {
+		return e.ID
+	} else if e.Name != "" {
+		return e.Name
+	} else {
+		return e.Method + "-" + e.GetPathPattern()
+	}
+}
+
+func (e Endpoint[Input, Output]) GetName() string {
+	return e.Name
+}
+
+func (e Endpoint[Input, Output]) GetSummary() string {
+	return e.Summary
+}
+
+func (e Endpoint[Input, Output]) GetDescription() string {
+	return e.Description
 }
 
 type EndpointInput[
