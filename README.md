@@ -15,18 +15,18 @@ It asks the question:
 
 ## Example
 
-First we specify one or more endpoints
+First we specify a resource, with one or more endpoints in a package:
 
 ```go
-package common
+package user_setting
 
 import (
 	. "github.com/GiGurra/apio/pkg/apio"
 	"net/http"
 )
 
-// UserSettingPath represents "/users/:user/settings/:settingCat/:settingId"
-type UserSettingPath struct {
+// Path represents "/users/:user/settings/:settingCat/:settingId"
+type Path struct {
 	_          any `path:"/users"`
 	User       int
 	_          any `path:"/settings"`
@@ -34,45 +34,47 @@ type UserSettingPath struct {
 	SettingId  string
 }
 
-type UserSettingQuery struct {
+type Query struct {
 	Foo *string
 	Bar int
 }
 
-type UserSetting struct {
+type Body struct {
 	Value any     `json:"value"`
 	Type  string  `json:"type"`
 	Opt   *string `json:"opt"`
 }
 
-type UserSettingHeaders struct {
+type Headers struct {
 	Yo          any
 	ContentType string `name:"Content-Type"`
 }
 
-type OutputHeaders struct {
+type RespHeaders struct {
 	ContentType string `name:"Content-Type"`
 }
 
-var GetEndpointSpec = Endpoint[
-	EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
-	EndpointOutput[X, UserSetting],
+var Get = Endpoint[
+	EndpointInput[Headers, Path, Query, X],
+	EndpointOutput[X, Body],
 ]{Method: http.MethodGet}
 
-var PutEndpointSpec = Endpoint[
-	EndpointInput[X, UserSettingPath, X, UserSetting],
-	EndpointOutput[OutputHeaders, X],
+var Put = Endpoint[
+	EndpointInput[X, Path, X, Body],
+	EndpointOutput[RespHeaders, X],
 ]{Method: http.MethodPost}
+
 ```
 
-Then we start a server:
+Then we create a server, for example with Echo Server:
+(but it could be any server implementation)
 
 ```go
 package main
 
 import (
 	"fmt"
-	. "github.com/GiGurra/apio/cmd/examples/common"
+	"github.com/GiGurra/apio/cmd/examples/user_setting"
 	. "github.com/GiGurra/apio/pkg/apio"
 	"github.com/labstack/echo/v4"
 )
@@ -81,22 +83,22 @@ func UserSettingEndpoints() []EndpointBase {
 
 	return []EndpointBase{
 
-		GetEndpointSpec.
+		user_setting.Get.
 			WithHandler(func(
-				input EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
-			) (EndpointOutput[X, UserSetting], error) {
+				input EndpointInput[user_setting.Headers, user_setting.Path, user_setting.Query, X],
+			) (EndpointOutput[X, user_setting.Body], error) {
 				fmt.Printf("invoked GET path with input: %+v\n", input)
-				return BodyResponse(UserSetting{
+				return BodyResponse(user_setting.Body{
 					Value: "testValue",
 					Type:  fmt.Sprintf("input=%+v", input),
 				}), nil
 			}),
 
-		PutEndpointSpec.WithHandler(func(
-			input EndpointInput[X, UserSettingPath, X, UserSetting],
-		) (EndpointOutput[OutputHeaders, X], error) {
+		user_setting.Put.WithHandler(func(
+			input EndpointInput[X, user_setting.Path, X, user_setting.Body],
+		) (EndpointOutput[user_setting.RespHeaders, X], error) {
 			fmt.Printf("invoked PUT path with input: %+v\n", input)
-			return HeadersResponse(OutputHeaders{
+			return HeadersResponse(user_setting.RespHeaders{
 				ContentType: "application/json",
 			}), nil
 		}),
@@ -125,16 +127,17 @@ func main() {
 	_ = echoServer.Start(":8080")
 }
 
+
 ```
 
-Then we can use the client:
+Lastly, we can for example make RPC calls to the endpoints like this:
 
 ```go
 package main
 
 import (
 	"fmt"
-	. "github.com/GiGurra/apio/cmd/examples/common"
+	"github.com/GiGurra/apio/cmd/examples/user_setting"
 	. "github.com/GiGurra/apio/pkg/apio"
 )
 
@@ -152,23 +155,23 @@ func main() {
 	}
 
 	input := NewInput(
-		UserSettingHeaders{
+		user_setting.Headers{
 			Yo:          "yo",
 			ContentType: "application/json",
 		},
-		UserSettingPath{
+		user_setting.Path{
 			User:       123,
 			SettingCat: "cat",
 			SettingId:  "id",
 		},
-		UserSettingQuery{
+		user_setting.Query{
 			Foo: ptr("foo"),
 			Bar: 123,
 		},
-		Empty, // No body sent (this is a GET call)
+		Empty, // no body in this get call
 	)
 
-	res, err := GetEndpointSpec.RPC(server, input, DefaultOpts())
+	res, err := user_setting.Get.RPC(server, input, DefaultOpts())
 	if err != nil {
 		panic(fmt.Sprintf("failed to call RPC GET endpoint: %v", err))
 	}
