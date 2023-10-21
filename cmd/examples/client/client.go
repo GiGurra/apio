@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	. "github.com/GiGurra/apio/cmd/examples/common"
 	. "github.com/GiGurra/apio/pkg/apio"
@@ -68,16 +67,17 @@ func call[Input EndpointInputBase, Output EndpointOutputBase](
 	// Make http call
 	client := http.Client{}
 	bodyIoReader := bytes.NewReader(payload.Body)
+	fullPath := fmt.Sprintf("%s://%s:%d%s%s%s",
+		server.Scheme,
+		server.Host,
+		server.Port,
+		server.BasePath,
+		payload.PathStr,
+		payload.QueryString(),
+	)
 	req, err := http.NewRequest(
 		endpointSpec.Method,
-		fmt.Sprintf("%s://%s:%d%s%s%s",
-			server.Scheme,
-			server.Host,
-			server.Port,
-			server.BasePath,
-			payload.Path,
-			payload.QueryString(),
-		),
+		fullPath,
 		bodyIoReader,
 	)
 
@@ -100,19 +100,17 @@ func call[Input EndpointInputBase, Output EndpointOutputBase](
 		_ = resp.Body.Close()
 	}()
 
+	if resp.StatusCode != 200 {
+		return result, fmt.Errorf("non-200 response: %d", resp.StatusCode)
+	}
+
 	// Read response
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return result, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var outputBody Output
-	err = json.Unmarshal(bodyBytes, &outputBody)
-	if err != nil {
-		return result, fmt.Errorf("failed to parse response body: %w", err)
-	}
-
-	newBodAny, err := result.SetBody(outputBody)
+	newBodAny, err := result.SetBody(bodyBytes)
 	if err != nil {
 		return result, fmt.Errorf("failed to set body: %w", err)
 	}

@@ -19,7 +19,7 @@ type EndpointOutputBase interface {
 	ToPayload() (OutputPayload, error)
 	validateBodyType()
 	validateHeadersType()
-	SetBody(body any) (any, error)
+	SetBody(jsonBytes []byte) (any, error)
 	SetHeaders(hdrs map[string][]string) (any, error)
 	SetCode(code int) any
 }
@@ -28,13 +28,13 @@ func (e EndpointOutput[HeadersType, BodyType]) GetCode() int {
 	return e.Code
 }
 
-func (e EndpointOutput[HeadersType, BodyType]) SetBody(nb any) (any, error) {
-	bodyTyped, ok := nb.(BodyType)
-	if !ok {
-		var zero BodyType
-		return e, fmt.Errorf("expected body to be of type %s, got %s", reflect.TypeOf(zero), reflect.TypeOf(nb))
+func (e EndpointOutput[HeadersType, BodyType]) SetBody(jsonBytes []byte) (any, error) {
+	var res BodyType
+	err := json.Unmarshal(jsonBytes, &res)
+	if err != nil {
+		return e, fmt.Errorf("failed to unmarshal body: %w", err)
 	}
-	e.Body = bodyTyped
+	e.Body = res
 	return e, nil
 }
 

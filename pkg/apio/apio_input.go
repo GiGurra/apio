@@ -137,7 +137,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (
 
 		// if the value is nil, move on
 		tpe := headersT.Field(i).Type
-		value := reflect.ValueOf(e.Headers).Field(i)
+		value := reflect.ValueOf(e.Query).Field(i)
 		if tpe.Kind() == reflect.Ptr && value.IsNil() {
 			continue
 		}
