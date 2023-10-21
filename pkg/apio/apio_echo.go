@@ -65,7 +65,7 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				return fmt.Errorf("error reading body: %v", err)
 			}
 
-			result, err := endpoint.invoke(InputPayload{
+			result, err := endpoint.handle(InputPayload{
 				Headers: headers,
 				Path:    pathParams,
 				Query:   queryParams,

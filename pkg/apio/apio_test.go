@@ -99,7 +99,7 @@ func TestGetUserSetting(t *testing.T) {
 		panic("no GET endpoint found")
 	}()
 
-	result, err := getEndpoint.invoke(InputPayload{
+	result, err := getEndpoint.handle(InputPayload{
 		Headers: map[string][]string{
 			"Content-Type": {"application/json"},
 			"Yo":           {"da"},
@@ -116,7 +116,7 @@ func TestGetUserSetting(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatal(fmt.Errorf("failed to invoke endpoint: %w", err))
+		t.Fatal(fmt.Errorf("failed to handle call: %w", err))
 	}
 
 	if result.GetCode() != http.StatusOK {
@@ -137,7 +137,7 @@ func TestGetBadRequestMissingHeader(t *testing.T) {
 		panic("no GET endpoint found")
 	}()
 
-	_, err := getEndpoint.invoke(InputPayload{
+	_, err := getEndpoint.handle(InputPayload{
 		Headers: map[string][]string{
 			"Content-Type": {"application/json"},
 		},
@@ -173,7 +173,7 @@ func TestGetUserMissingPath(t *testing.T) {
 		panic("no GET endpoint found")
 	}()
 
-	_, err := getEndpoint.invoke(InputPayload{
+	_, err := getEndpoint.handle(InputPayload{
 		Headers: map[string][]string{
 			"Content-Type": {"application/json"},
 			"Yo":           {"da"},
@@ -217,7 +217,7 @@ func TestPutUserSetting(t *testing.T) {
 		panic("no PUT endpoint found")
 	}()
 
-	result, err := getEndpoint.invoke(InputPayload{
+	result, err := getEndpoint.handle(InputPayload{
 		Path: map[string]string{
 			"User":       "123",
 			"SettingCat": "foo",
@@ -230,7 +230,7 @@ func TestPutUserSetting(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatal(fmt.Errorf("failed to invoke endpoint: %w", err))
+		t.Fatal(fmt.Errorf("failed to handle call: %w", err))
 	}
 
 	if result.GetCode() != http.StatusNoContent {

@@ -60,7 +60,7 @@ type EndpointBase interface {
 	getMethod() string
 	getPathPattern() string
 	getQueryPattern() string
-	invoke(payload InputPayload) (EndpointOutputBase, error)
+	handle(payload InputPayload) (EndpointOutputBase, error)
 	validate()
 }
 
@@ -192,7 +192,7 @@ func (e Endpoint[Input, Output]) validateOutputHeadersType() {
 	zero.validateHeadersType()
 }
 
-func (e Endpoint[Input, Output]) invoke(payload InputPayload) (EndpointOutputBase, error) {
+func (e Endpoint[Input, Output]) handle(payload InputPayload) (EndpointOutputBase, error) {
 	var zeroInput Input
 	var zeroOutput Output
 	input, err := zeroInput.parse(payload, e.getHeaderBindings(), e.getPathBindings(), e.getQueryBindings())
@@ -209,7 +209,7 @@ func (e Endpoint[Input, Output]) invoke(payload InputPayload) (EndpointOutputBas
 		if errors.As(err, &errResp) {
 			return zeroOutput, errResp
 		} else {
-			return zeroOutput, NewError(http.StatusInternalServerError, fmt.Sprintf("failed to invoke handler: %v", err), err)
+			return zeroOutput, NewError(http.StatusInternalServerError, fmt.Sprintf("failed to run endpoint handler: %v", err), err)
 		}
 	}
 	return output, nil
