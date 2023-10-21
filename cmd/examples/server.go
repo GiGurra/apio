@@ -1,16 +1,3 @@
-# apio
-
-This is an experimental declarative server-side http API library for Go.
-It is inspired by Tapir (scala).
-
-It asks the question:
-
-* What do we need to describe an API entirely within the Go type system, but to be able to always generate a valid API
-  specification from it? (ofc it also has to work :D)
-
-## Example
-
-```go
 package main
 
 import (
@@ -107,4 +94,3 @@ func main() {
 
 	_ = echoServer.Start(":8080")
 }
-```
