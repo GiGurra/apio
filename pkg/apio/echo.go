@@ -9,7 +9,9 @@ import (
 )
 
 func EchoInstall(echoServer *echo.Echo, api *Api) {
-	for _, endpoint := range api.Endpoints {
+	for i := range api.Endpoints {
+
+		endpoint := api.Endpoints[i] // need to do this until go 1.22 is released
 
 		path := func() string {
 			if api.IntBasePath == "" {

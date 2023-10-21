@@ -76,6 +76,8 @@ func TestGetUserSetting(t *testing.T) {
 	// add recovery middleware
 	//server.Use(middleware.Recover())
 
+	fmt.Printf("api: %+v\n", api)
+
 	EchoInstall(server, &api)
 
 	err := server.Start(":8080")
