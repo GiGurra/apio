@@ -9,6 +9,13 @@ import (
 )
 
 func EchoInstall(echoServer *echo.Echo, api *Api) {
+
+	fmt.Printf("installing api '%s' to echo server: \n", api.Name)
+	fmt.Printf(" * servers: \n")
+	for _, s := range api.Servers {
+		fmt.Printf("   * %+v: \n", s)
+	}
+
 	for i := range api.Endpoints {
 
 		endpoint := api.Endpoints[i] // need to do this until go 1.22 is released
@@ -21,7 +28,7 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 			}
 		}()
 
-		fmt.Printf("attaching: %s %s\n", endpoint.getMethod(), path)
+		fmt.Printf(" * attaching endpoint: %s %s\n", endpoint.getMethod(), path)
 		echoServer.Add(endpoint.getMethod(), path, func(ctx echo.Context) error {
 
 			headers := map[string][]string{}

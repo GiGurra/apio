@@ -60,11 +60,13 @@ func TestGetUserSetting(t *testing.T) {
 
 	api :=
 		Api{
-			Published: []Server{{
+			Name: "My test API",
+			Servers: []Server{{
 				Scheme:   "https",
 				Host:     "api.example.com",
 				Port:     443,
 				BasePath: "/api/v1",
+				HttpVer:  "1.1",
 			}},
 			IntBasePath: "/api/v1",
 		}.WithEndpoints(

@@ -12,7 +12,8 @@ import (
 ///// PUBLIC FOUNDATION TYPES
 
 type Api struct {
-	Published   []Server
+	Name        string
+	Servers     []Server
 	IntBasePath string
 	Endpoints   []EndpointBase
 }
