@@ -94,7 +94,6 @@ func (e Endpoint[Input, Output]) RPC(
 	}
 	result = newBodAny.(Output)
 
-	newBodAny = result.SetCode(resp.StatusCode)
 	result = newBodAny.(Output)
 
 	return result, nil

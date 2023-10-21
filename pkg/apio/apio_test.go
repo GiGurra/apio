@@ -119,10 +119,6 @@ func TestGetUserSetting(t *testing.T) {
 		t.Fatal(fmt.Errorf("failed to Handle call: %w", err))
 	}
 
-	if result.GetCode() != http.StatusOK {
-		t.Fatal(fmt.Errorf("unexpected status code: %d", result.GetCode()))
-	}
-
 	fmt.Printf("result: %+v\n", result)
 }
 
@@ -231,10 +227,6 @@ func TestPutUserSetting(t *testing.T) {
 
 	if err != nil {
 		t.Fatal(fmt.Errorf("failed to Handle call: %w", err))
-	}
-
-	if result.GetCode() != http.StatusNoContent {
-		t.Fatal(fmt.Errorf("unexpected status code: %d", result.GetCode()))
 	}
 
 	expHeaders := map[string][]string{

@@ -74,6 +74,9 @@ type EndpointBase interface {
 	GetInputHeaderInfo() AnalyzedStruct
 	GetInputPathInfo() AnalyzedStruct
 	GetInputQueryInfo() AnalyzedStruct
+	GetBodyOutputInfo() AnalyzedStruct
+	GetOutput() EndpointOutputBase
+	OkCode() int
 }
 
 type Endpoint[Input EndpointInputBase, Output EndpointOutputBase] struct {
@@ -86,6 +89,16 @@ type Endpoint[Input EndpointInputBase, Output EndpointOutputBase] struct {
 	headerBindings *HeaderBindings
 	pathBindings   *PathBindings
 	queryBindings  *QueryBindings
+}
+
+func (e Endpoint[Input, Output]) GetOutput() EndpointOutputBase {
+	var zero Output
+	return zero
+}
+
+func (e Endpoint[Input, Output]) OkCode() int {
+	var zero Output
+	return zero.OkCode()
 }
 
 func (e Endpoint[Input, Output]) GetId() string {
@@ -111,6 +124,11 @@ func (e Endpoint[Input, Output]) GetInputPathInfo() AnalyzedStruct {
 func (e Endpoint[Input, Output]) GetInputQueryInfo() AnalyzedStruct {
 	var zero Input
 	return zero.GetQueryInfo()
+}
+
+func (e Endpoint[Input, Output]) GetBodyOutputInfo() AnalyzedStruct {
+	var zero Output
+	return zero.GetBodyInfo()
 }
 
 func (e Endpoint[Input, Output]) GetName() string {
@@ -141,9 +159,9 @@ type EndpointOutput[
 	HeadersType any,
 	BodyType any,
 ] struct {
-	Code    int
-	Headers HeadersType
-	Body    BodyType
+	Headers     HeadersType
+	Body        BodyType
+	Description string
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -174,14 +192,11 @@ type X struct{}
 var Empty = X{}
 
 func EmptyResponse() EndpointOutput[X, X] {
-	return EndpointOutput[X, X]{
-		Code: 204,
-	}
+	return EndpointOutput[X, X]{}
 }
 
 func Response[H any, B any](headers H, body B) EndpointOutput[H, B] {
 	return EndpointOutput[H, B]{
-		Code:    200,
 		Headers: headers,
 		Body:    body,
 	}
@@ -189,14 +204,12 @@ func Response[H any, B any](headers H, body B) EndpointOutput[H, B] {
 
 func BodyResponse[BodyType any](body BodyType) EndpointOutput[X, BodyType] {
 	return EndpointOutput[X, BodyType]{
-		Code: 200,
 		Body: body,
 	}
 }
 
 func HeadersResponse[H any](headers H) EndpointOutput[H, X] {
 	return EndpointOutput[H, X]{
-		Code:    204,
 		Headers: headers,
 	}
 }

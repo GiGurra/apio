@@ -183,26 +183,31 @@ func GetPaths(api apio.Api) map[string]any {
 			result[path] = make(map[string]any)
 		}
 		methods := result[path].(map[string]any)
+
+		bodyInfo := e.GetBodyOutputInfo()
+		content := make(map[string]any)
+		if bodyInfo.HasContent() {
+			content = map[string]any{
+				"application/json": map[string]any{
+					"schema": map[string]any{
+						"type": "object",
+						"$ref": "#/components/schemas/" + bodyInfo.Pkg + "/" + bodyInfo.Name,
+					},
+				},
+			}
+		}
+
 		methods[strings.ToLower(e.GetMethod())] = Operation{
 			Summary:     e.GetSummary(),
 			Description: e.GetDescription(),
 			OperationId: e.GetId(),
 			Parameters:  GetParameters(e),
-			//Responses: map[string]Response{
-			//	"200": {
-			//		Description: "A list of users",
-			//		Content: map[string]any{
-			//			"application/json": map[string]any{
-			//				"schema": map[string]any{
-			//					"type": "array",
-			//					"items": map[string]any{
-			//						"$ref": "#/components/schemas/User",
-			//					},
-			//				},
-			//			},
-			//		},
-			//	},
-			//},
+			Responses: map[string]Response{
+				strconv.Itoa(e.OkCode()): {
+					Description: e.GetOutput().GetDescription(),
+					Content:     content,
+				},
+			},
 		}
 	}
 

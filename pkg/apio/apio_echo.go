@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"io"
+	"net/http"
 	"strings"
 )
 
@@ -96,7 +97,11 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				}
 			}
 
-			return ctx.JSONBlob(result.GetCode(), outputBodyBytes)
+			if len(outputBodyBytes) == 0 {
+				return ctx.NoContent(http.StatusNoContent)
+			} else {
+				return ctx.JSONBlob(http.StatusOK, outputBodyBytes)
+			}
 		})
 	}
 }

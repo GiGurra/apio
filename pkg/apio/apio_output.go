@@ -3,6 +3,7 @@ package apio
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"reflect"
 )
 
@@ -13,7 +14,6 @@ type OutputPayload struct {
 }
 
 type EndpointOutputBase interface {
-	GetCode() int
 	GetHeaders() map[string][]string
 	GetBody() ([]byte, error)
 	ToPayload() (OutputPayload, error)
@@ -21,11 +21,33 @@ type EndpointOutputBase interface {
 	validateHeadersType()
 	SetBody(jsonBytes []byte) (any, error)
 	SetHeaders(hdrs map[string][]string) (any, error)
-	SetCode(code int) any
+	GetBodyInfo() AnalyzedStruct
+	GetDescription() string
+	OkCode() int
 }
 
-func (e EndpointOutput[HeadersType, BodyType]) GetCode() int {
-	return e.Code
+func (e EndpointOutput[HeadersType, BodyType]) GetDescription() string {
+	return e.Description
+}
+
+func (e EndpointOutput[HeadersType, BodyType]) GetBodyInfo() AnalyzedStruct {
+	info, err := AnalyzeStruct(e.Body)
+	if err != nil {
+		panic(fmt.Sprintf("failed to analyze struct: %v", err))
+	}
+	return info
+}
+
+func (e EndpointOutput[HeadersType, BodyType]) OkCode() int {
+	bodyInfo, err := AnalyzeStruct(e.Body)
+	if err != nil {
+		panic(fmt.Errorf("failed to analyze struct: %w", err))
+	}
+	if len(bodyInfo.Fields) == 0 {
+		return http.StatusNoContent
+	} else {
+		return http.StatusOK
+	}
 }
 
 func (e EndpointOutput[HeadersType, BodyType]) SetBody(jsonBytes []byte) (any, error) {
@@ -42,11 +64,6 @@ func (e EndpointOutput[HeadersType, BodyType]) SetBody(jsonBytes []byte) (any, e
 	}
 	e.Body = res
 	return e, nil
-}
-
-func (e EndpointOutput[HeadersType, BodyType]) SetCode(code int) any {
-	e.Code = code
-	return e
 }
 
 func (e EndpointOutput[HeadersType, BodyType]) SetHeaders(hdrs map[string][]string) (any, error) {
@@ -99,7 +116,6 @@ func (e EndpointOutput[HeadersType, BodyType]) ToPayload() (OutputPayload, error
 		return OutputPayload{}, fmt.Errorf("failed to get body: %w", err)
 	}
 	return OutputPayload{
-		Code:    e.Code,
 		Headers: e.GetHeaders(),
 		Body:    bodyBytes,
 	}, nil
@@ -130,6 +146,13 @@ func (e EndpointOutput[HeadersType, BodyType]) GetHeaders() map[string][]string 
 }
 
 func (e EndpointOutput[HeadersType, BodyType]) GetBody() ([]byte, error) {
+	structInfo, err := AnalyzeStruct(e.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to analyze struct: %w", err)
+	}
+	if len(structInfo.Fields) == 0 {
+		return []byte{}, nil
+	}
 	bytes, err := json.Marshal(e.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal body: %w", err)

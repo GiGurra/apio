@@ -97,6 +97,10 @@ type AnalyzedStruct struct {
 	FieldsByLKName    map[string]AnalyzedField // lower kebab case
 }
 
+func (a *AnalyzedStruct) HasContent() bool {
+	return len(a.Fields) > 0
+}
+
 func AnalyzeField[Parent any](parent Parent, index int) (AnalyzedField, error) {
 	structField := reflect.TypeOf(parent).Field(index)
 	fieldType := structField.Type
