@@ -135,7 +135,7 @@ func GetParameters(api apio.EndpointBase) []Parameter {
 
 	for _, field := range api.GetInputHeaderInfo().Fields {
 
-		if field.LKName == "Content-Type" {
+		if field.LKName == "content-type" {
 			continue // OpenAPI 3 spec doesn't permit this here
 		}
 
