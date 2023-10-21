@@ -26,17 +26,22 @@ type UserSetting struct {
 	Type  string `json:"type"`
 }
 
+type UserSettingHeaders struct {
+	Yo          any
+	ContentType string `name:"Content-Type"`
+}
+
 func UserSettingEndpoints() []EndpointBase {
 
 	return []EndpointBase{
 
 		Endpoint[
-			EndpointInput[X, UserSettingPath, UserSettingQuery, X],
+			EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
 			EndpointOutput[X, UserSetting],
 		]{
 			Method: http.MethodGet,
 			Handler: func(
-				input EndpointInput[X, UserSettingPath, UserSettingQuery, X],
+				input EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
 			) (EndpointOutput[X, UserSetting], error) {
 				fmt.Printf("invoked GET path with input: %+v\n", input)
 				return BodyResponse(UserSetting{

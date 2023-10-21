@@ -9,6 +9,7 @@ import (
 type pathFieldSetter = func(target reflect.Value, from string) error
 
 type queryFieldSetter = func(target reflect.Value, from *string) error
+type headerFieldSetter = func(target reflect.Value, from *string) error
 
 func getFromStringPathFieldSetter(field reflect.StructField) pathFieldSetter {
 	parseFn, err := getStringParsePtrFn(field.Type)
@@ -37,7 +38,38 @@ func getFromStringQueryFieldSetter(field reflect.StructField) queryFieldSetter {
 		if from == nil {
 			// Check that target is a pointer (=optional)
 			if target.Kind() != reflect.Ptr {
-				return fmt.Errorf("missing required query parameter '%s'", field.Name)
+				return fmt.Errorf("missing required parameter '%s'", field.Name)
+			} else {
+				// Leave the target at nil/zero/unset
+				return nil
+			}
+		}
+
+		parsedPtr, err := parseFn(*from)
+		if err != nil {
+			return fmt.Errorf("failed to parse '%s' into field %s [%t]: %w", *from, field.Name, field.Type, err)
+		}
+		if target.Kind() == reflect.Ptr {
+			target.Set(reflect.ValueOf(parsedPtr))
+		} else {
+			target.Set(reflect.ValueOf(parsedPtr).Elem())
+		}
+		return nil
+	}
+}
+
+func getFromStringHeaderFieldSetter(field reflect.StructField) queryFieldSetter {
+	parseFn, err := getStringParsePtrFn(field.Type)
+	if err != nil {
+		panic(fmt.Errorf("failed to get parse function for field '%s': %w", field.Name, err))
+	}
+
+	return func(target reflect.Value, from *string) error {
+
+		if from == nil {
+			// Check that target is a pointer (=optional)
+			if target.Kind() != reflect.Ptr {
+				return fmt.Errorf("missing required header parameter '%s'", field.Name)
 			} else {
 				// Leave the target at nil/zero/unset
 				return nil

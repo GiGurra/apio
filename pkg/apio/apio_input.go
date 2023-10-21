@@ -16,11 +16,17 @@ type inputPayload struct {
 type endpointInputBase interface {
 	getHeaders() any
 	getPath() any
+	calcHeaderBindings() HeaderBindings
 	calcPathBindings() PathBindings
 	calcQueryBindings() QueryBindings
 	getQuery() any
 	getBody() any
-	parse(payload inputPayload, pathBinding PathBindings, queryBindings QueryBindings) (any, error)
+	parse(
+		payload inputPayload,
+		bindings HeaderBindings,
+		pathBinding PathBindings,
+		queryBindings QueryBindings,
+	) (any, error)
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getHeaders() any {
@@ -33,12 +39,31 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getPath() any
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 	payload inputPayload,
+	headerBindings HeaderBindings,
 	pathBindings PathBindings,
 	queryBindings QueryBindings,
 ) (any, error) {
 	fmt.Printf("todo: implement EndpointInput.parse\n")
 
 	var result EndpointInput[HeadersType, PathType, QueryType, BodyType]
+
+	// parse headers
+	for name, setter := range headerBindings.Bindings {
+		inputValue := payload.Query[name]
+		valueToSet := reflect.ValueOf(&result.Query).Elem().FieldByName(name)
+		if len(inputValue) > 1 {
+			return result, fmt.Errorf("repeated header parameters not yet supported, field: %s", name)
+		}
+		var err error
+		if len(inputValue) == 0 {
+			err = setter(valueToSet, nil)
+		} else {
+			err = setter(valueToSet, &inputValue[0])
+		}
+		if err != nil {
+			return result, fmt.Errorf("failed to set header parameter '%s': %w", name, err)
+		}
+	}
 
 	// parse path parameters
 	for name, setter := range pathBindings.Bindings {
@@ -67,10 +92,14 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 			err = setter(valueToSet, &inputValue[0])
 		}
 		if err != nil {
-			return result, fmt.Errorf("failed to set path parameter '%s': %w", name, err)
+			return result, fmt.Errorf("failed to set query parameter '%s': %w", name, err)
 		}
 	}
 	return result, nil
+}
+
+type HeaderBindings struct {
+	Bindings map[string]headerFieldSetter
 }
 
 type PathBindings struct {
@@ -81,6 +110,36 @@ type PathBindings struct {
 type QueryBindings struct {
 	FlatPath string
 	Bindings map[string]queryFieldSetter
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) calcHeaderBindings() HeaderBindings {
+
+	pathT := reflect.TypeOf((*HeadersType)(nil)).Elem()
+	if pathT.Kind() != reflect.Struct {
+		panic("HeadersType must be a struct")
+	}
+
+	result := HeaderBindings{
+		Bindings: make(map[string]headerFieldSetter),
+	}
+	alreadyTaken := make(map[string]bool)
+
+	// Iterate over fields in PathType
+	for i := 0; i < pathT.NumField(); i++ {
+		// Check if the field has path
+		field := pathT.Field(i)
+
+		if field.Name != "_" {
+			if alreadyTaken[field.Name] {
+				panic(fmt.Sprintf("field '%s' is already taken", field.Name))
+			}
+
+			alreadyTaken[field.Name] = true
+			result.Bindings[field.Name] = getFromStringQueryFieldSetter(field)
+		}
+	}
+
+	return result
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) calcPathBindings() PathBindings {
@@ -168,6 +227,11 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getQuery() an
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getBody() any {
 	return e.Body
+}
+
+func calcHeaderBindings[Input endpointInputBase]() HeaderBindings {
+	var zero Input
+	return zero.calcHeaderBindings()
 }
 
 func calcPathBindings[Input endpointInputBase]() PathBindings {

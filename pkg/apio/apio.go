@@ -65,10 +65,11 @@ type EndpointBase interface {
 }
 
 type Endpoint[Input endpointInputBase, Output EndpointOutputBase] struct {
-	Method        string
-	Handler       func(Input) (Output, error)
-	pathBindings  *PathBindings
-	queryBindings *QueryBindings
+	Method         string
+	Handler        func(Input) (Output, error)
+	headerBindings *HeaderBindings
+	pathBindings   *PathBindings
+	queryBindings  *QueryBindings
 }
 
 type EndpointInput[
@@ -130,6 +131,14 @@ func HeadersResponse[H any](headers H) EndpointOutput[H, X] {
 ////////////////////////////////////////////////////////////////////////////////////
 ///// PRIVATE IMPL
 
+func (e Endpoint[Input, Output]) getHeaderBindings() HeaderBindings {
+	if e.headerBindings == nil {
+		b := calcHeaderBindings[Input]()
+		e.headerBindings = &b
+	}
+	return *e.headerBindings
+}
+
 func (e Endpoint[Input, Output]) getPathBindings() PathBindings {
 	if e.pathBindings == nil {
 		b := calcPathBindings[Input]()
@@ -149,7 +158,7 @@ func (e Endpoint[Input, Output]) getQueryBindings() QueryBindings {
 func (e Endpoint[Input, Output]) invoke(payload inputPayload) (EndpointOutputBase, error) {
 	var zeroInput Input
 	var zeroOutput Output
-	input, err := zeroInput.parse(payload, e.getPathBindings(), e.getQueryBindings())
+	input, err := zeroInput.parse(payload, e.getHeaderBindings(), e.getPathBindings(), e.getQueryBindings())
 	if err != nil {
 		return zeroOutput, NewError(http.StatusBadRequest, fmt.Sprintf("failed to parse input: %v", err), err)
 	}
@@ -182,6 +191,7 @@ func (e Endpoint[Input, Output]) getQueryPattern() string {
 }
 
 func (e Endpoint[Input, Output]) validate() {
-	e.getPathBindings()  // panics if invalid
-	e.getQueryBindings() // panics if invalid
+	e.getHeaderBindings() // panics if invalid
+	e.getPathBindings()   // panics if invalid
+	e.getQueryBindings()  // panics if invalid
 }
