@@ -92,14 +92,14 @@ func TestGetUserSetting(t *testing.T) {
 
 	getEndpoint := func() EndpointBase {
 		for _, e := range testApi.Endpoints {
-			if e.getMethod() == http.MethodGet {
+			if e.GetMethod() == http.MethodGet {
 				return e
 			}
 		}
 		panic("no GET endpoint found")
 	}()
 
-	result, err := getEndpoint.handle(InputPayload{
+	result, err := getEndpoint.Handle(InputPayload{
 		Headers: map[string][]string{
 			"Content-Type": {"application/json"},
 			"Yo":           {"da"},
@@ -116,7 +116,7 @@ func TestGetUserSetting(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatal(fmt.Errorf("failed to handle call: %w", err))
+		t.Fatal(fmt.Errorf("failed to Handle call: %w", err))
 	}
 
 	if result.GetCode() != http.StatusOK {
@@ -130,14 +130,14 @@ func TestGetBadRequestMissingHeader(t *testing.T) {
 
 	getEndpoint := func() EndpointBase {
 		for _, e := range testApi.Endpoints {
-			if e.getMethod() == http.MethodGet {
+			if e.GetMethod() == http.MethodGet {
 				return e
 			}
 		}
 		panic("no GET endpoint found")
 	}()
 
-	_, err := getEndpoint.handle(InputPayload{
+	_, err := getEndpoint.Handle(InputPayload{
 		Headers: map[string][]string{
 			"Content-Type": {"application/json"},
 		},
@@ -166,14 +166,14 @@ func TestGetUserMissingPath(t *testing.T) {
 
 	getEndpoint := func() EndpointBase {
 		for _, e := range testApi.Endpoints {
-			if e.getMethod() == http.MethodGet {
+			if e.GetMethod() == http.MethodGet {
 				return e
 			}
 		}
 		panic("no GET endpoint found")
 	}()
 
-	_, err := getEndpoint.handle(InputPayload{
+	_, err := getEndpoint.Handle(InputPayload{
 		Headers: map[string][]string{
 			"Content-Type": {"application/json"},
 			"Yo":           {"da"},
@@ -210,14 +210,14 @@ func TestPutUserSetting(t *testing.T) {
 
 	getEndpoint := func() EndpointBase {
 		for _, e := range testApi.Endpoints {
-			if e.getMethod() == http.MethodPut {
+			if e.GetMethod() == http.MethodPut {
 				return e
 			}
 		}
 		panic("no PUT endpoint found")
 	}()
 
-	result, err := getEndpoint.handle(InputPayload{
+	result, err := getEndpoint.Handle(InputPayload{
 		Path: map[string]string{
 			"User":       "123",
 			"SettingCat": "foo",
@@ -230,7 +230,7 @@ func TestPutUserSetting(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatal(fmt.Errorf("failed to handle call: %w", err))
+		t.Fatal(fmt.Errorf("failed to Handle call: %w", err))
 	}
 
 	if result.GetCode() != http.StatusNoContent {

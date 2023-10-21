@@ -57,10 +57,10 @@ func NewError(code int, message string, intErr error) error {
 }
 
 type EndpointBase interface {
-	getMethod() string
-	getPathPattern() string
-	getQueryPattern() string
-	handle(payload InputPayload) (EndpointOutputBase, error)
+	GetMethod() string
+	GetPathPattern() string
+	GetQueryPattern() string
+	Handle(payload InputPayload) (EndpointOutputBase, error)
 	validate()
 }
 
@@ -192,7 +192,7 @@ func (e Endpoint[Input, Output]) validateOutputHeadersType() {
 	zero.validateHeadersType()
 }
 
-func (e Endpoint[Input, Output]) handle(payload InputPayload) (EndpointOutputBase, error) {
+func (e Endpoint[Input, Output]) Handle(payload InputPayload) (EndpointOutputBase, error) {
 	var zeroInput Input
 	var zeroOutput Output
 	input, err := zeroInput.parse(payload, e.getHeaderBindings(), e.getPathBindings(), e.getQueryBindings())
@@ -223,15 +223,15 @@ func AsErResp(err error) *ErrResp {
 	return nil
 }
 
-func (e Endpoint[Input, Output]) getMethod() string {
+func (e Endpoint[Input, Output]) GetMethod() string {
 	return e.Method
 }
 
-func (e Endpoint[Input, Output]) getPathPattern() string {
+func (e Endpoint[Input, Output]) GetPathPattern() string {
 	return e.getPathBindings().FlatPath
 }
 
-func (e Endpoint[Input, Output]) getQueryPattern() string {
+func (e Endpoint[Input, Output]) GetQueryPattern() string {
 	return e.getQueryBindings().FlatPath
 }
 

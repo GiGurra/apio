@@ -22,16 +22,16 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 
 		path := func() string {
 			if api.IntBasePath == "" {
-				return endpoint.getPathPattern()
+				return endpoint.GetPathPattern()
 			} else {
-				return api.IntBasePath + "/" + strings.TrimPrefix(endpoint.getPathPattern(), "/")
+				return api.IntBasePath + "/" + strings.TrimPrefix(endpoint.GetPathPattern(), "/")
 			}
 		}()
 
-		pathWithQueryParams := path + endpoint.getQueryPattern()
+		pathWithQueryParams := path + endpoint.GetQueryPattern()
 
-		fmt.Printf(" * attaching endpoint: %s %s\n", endpoint.getMethod(), pathWithQueryParams)
-		echoServer.Add(endpoint.getMethod(), path, func(ctx echo.Context) error {
+		fmt.Printf(" * attaching endpoint: %s %s\n", endpoint.GetMethod(), pathWithQueryParams)
+		echoServer.Add(endpoint.GetMethod(), path, func(ctx echo.Context) error {
 
 			body := ctx.Request().Body
 			defer func(body io.ReadCloser) {
@@ -65,7 +65,7 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				return fmt.Errorf("error reading body: %v", err)
 			}
 
-			result, err := endpoint.handle(InputPayload{
+			result, err := endpoint.Handle(InputPayload{
 				Headers: headers,
 				Path:    pathParams,
 				Query:   queryParams,
