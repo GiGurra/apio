@@ -55,11 +55,8 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 
 	// parse query parameters
 	for name, setter := range queryBindings.Bindings {
-		inputValue, ok := payload.Query[name]
-		if !ok {
-			return result, fmt.Errorf("missing path parameter '%s'", name)
-		}
-		valueToSet := reflect.ValueOf(&result.Path).Elem().FieldByName(name)
+		inputValue := payload.Query[name]
+		valueToSet := reflect.ValueOf(&result.Query).Elem().FieldByName(name)
 		if len(inputValue) > 1 {
 			return result, fmt.Errorf("repeated query parameters not yet supported, field: %s", name)
 		}

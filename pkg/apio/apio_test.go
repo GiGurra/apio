@@ -17,7 +17,7 @@ type UserSettingPath struct {
 }
 
 type UserSettingQuery struct {
-	Foo string
+	Foo *string
 	Bar int
 }
 
