@@ -162,6 +162,43 @@ func TestGetBadRequestMissingHeader(t *testing.T) {
 	}
 }
 
+func TestGetUserMissingPath(t *testing.T) {
+
+	getEndpoint := func() EndpointBase {
+		for _, e := range testApi.Endpoints {
+			if e.getMethod() == http.MethodGet {
+				return e
+			}
+		}
+		panic("no GET endpoint found")
+	}()
+
+	_, err := getEndpoint.invoke(inputPayload{
+		Headers: map[string][]string{
+			"Content-Type": {"application/json"},
+			"Yo":           {"da"},
+		},
+		Path: map[string]string{
+			"User":       "123",
+			"SettingCat": "foo",
+		},
+		Query: map[string][]string{
+			"Foo": {"foo"},
+			"Bar": {"123"},
+		},
+	})
+
+	if err == nil {
+		t.Fatal(fmt.Errorf("expected error with 400 out, but didnt get any"))
+	}
+
+	errTyped := *AsErResp(err)
+
+	if errTyped.Status != http.StatusBadRequest {
+		t.Fatal(fmt.Errorf("unexpected status code: %d", errTyped.Status))
+	}
+}
+
 func must[T any](t T, err error) T {
 	if err != nil {
 		panic(err)
