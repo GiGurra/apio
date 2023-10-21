@@ -58,7 +58,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 			rootStructType := rootStructValue.Type()
 			for i := 0; i < rootStructType.NumField(); i++ {
 				field := rootStructType.Field(i)
-				if field.Tag.Get("name") == name {
+				if strings.ToLower(field.Tag.Get("name")) == strings.ToLower(name) {
 					valueToSet = rootStructValue.Field(i)
 					break
 				}
