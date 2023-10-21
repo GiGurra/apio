@@ -54,14 +54,18 @@ func (e Endpoint[Input, Output]) Call(
 		_ = resp.Body.Close()
 	}()
 
-	if resp.StatusCode/100 != 2 {
-		return result, fmt.Errorf("non-200 response: %d", resp.StatusCode)
-	}
-
 	// Read response
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return result, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode/100 != 2 {
+		return result, ErrResp{
+			Status: resp.StatusCode,
+			ClMsg:  fmt.Sprintf("non-2xx status code: %d, body: %s", resp.StatusCode, string(bodyBytes)),
+			IntErr: nil,
+		}
 	}
 
 	newBodAny, err := result.SetBody(bodyBytes)
