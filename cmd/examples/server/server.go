@@ -58,10 +58,10 @@ func main() {
 	openApi3 := openapi3.ToOpenApi3(testApi)
 	openApi3Json, err := json.MarshalIndent(openApi3, "", "  ")
 	if err != nil {
-		panic(fmt.Errorf("failed to marshal OpenAPI 3.0.0 spec: %v", err))
+		panic(fmt.Errorf("failed to marshal OpenAPI 3 spec: %v", err))
 	}
 
-	fmt.Printf("OpenAPI 3.0.0 spec:\n")
+	fmt.Printf("OpenAPI 3 spec:\n")
 	fmt.Printf("%s\n", openApi3Json)
 
 	echoServer := echo.New()
