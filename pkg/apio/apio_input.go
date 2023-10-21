@@ -69,30 +69,28 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (
 
 	// Serialize headers
 	headers := map[string][]string{}
-	headersT := reflect.TypeOf(e.Headers)
-	if headersT.Kind() != reflect.Struct {
-		return InputPayload{}, fmt.Errorf("HeadersType must be a struct, this should have been caught in initial validation step")
+	headersInfo, err := AnalyzeStruct(e.Headers)
+	if err != nil {
+		return InputPayload{}, fmt.Errorf("failed to analyze headers: %w", err)
 	}
-	for i := 0; i < headersT.NumField(); i++ {
-
-		// if the value is nil, move on
-		tpe := headersT.Field(i).Type
-		value := reflect.ValueOf(e.Headers).Field(i)
-		if tpe.Kind() == reflect.Ptr && value.IsNil() {
-			continue
-		}
-
-		field := headersT.Field(i)
+	for _, field := range headersInfo.Fields {
 		if field.Name != "_" {
-			name := field.Name
-			if nameOvrd, ok := field.Tag.Lookup("name"); ok {
-				name = nameOvrd
+			key := field.LKName
+			valuePtr, err := field.GetPtr(&e.Headers)
+			if err != nil {
+				return InputPayload{}, fmt.Errorf("failed to get header parameter '%s': %w", field.Name, err)
 			}
-			valueSerialized, err := serializeValue(value)
+			if valuePtr == nil && field.IsRequired() {
+				return InputPayload{}, fmt.Errorf("missing required header parameter '%s'", field.Name)
+			}
+			if valuePtr == nil {
+				continue
+			}
+			valueSerialized, err := serializeValue(reflect.ValueOf(valuePtr).Elem())
 			if err != nil {
 				return InputPayload{}, err
 			}
-			headers[name] = []string{valueSerialized}
+			headers[key] = []string{valueSerialized}
 		}
 	}
 
@@ -136,7 +134,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (
 	for i := 0; i < queryT.NumField(); i++ {
 
 		// if the value is nil, move on
-		tpe := headersT.Field(i).Type
+		tpe := queryT.Field(i).Type
 		value := reflect.ValueOf(e.Query).Field(i)
 		if tpe.Kind() == reflect.Ptr && value.IsNil() {
 			continue
@@ -179,10 +177,20 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 	var result EndpointInput[HeadersType, PathType, QueryType, BodyType]
 
 	// parse headers
+	headerStructInfo, err := AnalyzeStruct(e.Headers)
+	if err != nil {
+		return result, fmt.Errorf("failed to analyze headers: %w", err)
+	}
 	for name, setter := range headerBindings.Bindings {
-		inputValue := payload.Headers[name]
+		lkName := strings.ToLower(name)
+		fieldInfo, ok := headerStructInfo.FieldsByLKName[lkName]
+		if !ok {
+			return result, fmt.Errorf("failed to find header parameter info '%s'", name)
+		}
+		inputValue := payload.Headers[lkName]
+
 		rootStructValue := reflect.ValueOf(&result.Headers).Elem()
-		valueToSet := rootStructValue.FieldByName(name)
+		valueToSet := rootStructValue.FieldByName(fieldInfo.FieldName)
 		reflectZero := reflect.Value{}
 		if valueToSet == reflectZero {
 			// Did not find the correct field. Try to find it by tag
@@ -194,6 +202,10 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 					break
 				}
 			}
+		}
+
+		if valueToSet == reflectZero {
+			return result, fmt.Errorf("failed to find header parameter mapping for '%s'", name)
 		}
 
 		if len(inputValue) > 1 {
@@ -275,9 +287,9 @@ type QueryBindings struct {
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) calcHeaderBindings() HeaderBindings {
 
-	pathT := reflect.TypeOf((*HeadersType)(nil)).Elem()
-	if pathT.Kind() != reflect.Struct {
-		panic("HeadersType must be a struct")
+	structInfo, err := AnalyzeStruct(e.Headers)
+	if err != nil {
+		panic(fmt.Errorf("failed to analyze headers: %w", err))
 	}
 
 	result := HeaderBindings{
@@ -286,22 +298,14 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) calcHeaderBin
 	alreadyTaken := make(map[string]bool)
 
 	// Iterate over fields in HeaderType
-	for i := 0; i < pathT.NumField(); i++ {
-		// Check if the field has path
-		field := pathT.Field(i)
-
+	for _, field := range structInfo.Fields {
 		if field.Name != "_" {
-			name := field.Name
-			if nameOvrd, ok := field.Tag.Lookup("name"); ok {
-				name = nameOvrd
+			key := field.LKName
+			if alreadyTaken[key] {
+				panic(fmt.Sprintf("header '%s' is already taken", key))
 			}
-
-			if alreadyTaken[name] {
-				panic(fmt.Sprintf("header '%s' is already taken", name))
-			}
-
-			alreadyTaken[name] = true
-			result.Bindings[name] = getFromStringHeaderFieldSetter(field, name)
+			alreadyTaken[key] = true
+			result.Bindings[key] = getFromStringHeaderFieldSetter(field.StructField, key)
 		}
 	}
 

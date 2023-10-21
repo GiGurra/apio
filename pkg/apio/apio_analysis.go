@@ -15,6 +15,7 @@ type AnalyzedField struct {
 	LKName       string
 	FieldName    string
 	OverrideName string
+	StructField  reflect.StructField
 	Type         reflect.Type
 	ValueType    reflect.Type
 	Index        int
@@ -47,21 +48,44 @@ func (a *AnalyzedField) IsSlice() bool {
 	return a.Type.Kind() == reflect.Slice
 }
 
-func (a *AnalyzedField) Assign(parentStruct *any, value *any) error {
-	parentT := reflect.TypeOf(parentStruct)
-	if parentT.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("expected struct, got %v", parentT.Kind())
+func (a *AnalyzedField) Assign(parentPtr any, valuePtr any) error {
+	parentT := reflect.TypeOf(parentPtr)
+	if parentT.Kind() != reflect.Ptr {
+		return fmt.Errorf("expected pointer, got %v", parentT.Kind())
 	}
-	target := reflect.ValueOf(parentStruct).Elem().Field(a.Index)
+	if parentT.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("expected struct, got %v", parentT.Elem().Kind())
+	}
+	target := reflect.ValueOf(parentPtr).Elem().Field(a.Index)
 	if a.IsPointer {
-		target.Set(reflect.ValueOf(value))
+		target.Set(reflect.ValueOf(valuePtr))
 	} else {
-		if value == nil {
+		if valuePtr == nil {
 			return fmt.Errorf("expected non-nil value for required field %v", a.Name)
 		}
-		target.Set(reflect.ValueOf(value).Elem())
+		target.Set(reflect.ValueOf(valuePtr).Elem())
 	}
 	return nil
+}
+
+func (a *AnalyzedField) GetPtr(parentPtr any) (any, error) {
+	parentT := reflect.TypeOf(parentPtr)
+	if parentT.Kind() != reflect.Ptr {
+		return nil, fmt.Errorf("expected pointer, got %v", parentT.Kind())
+	}
+	if parentT.Elem().Kind() != reflect.Struct {
+		return nil, fmt.Errorf("expected struct, got %v", parentT.Elem().Kind())
+	}
+	source := reflect.ValueOf(parentPtr).Elem().Field(a.Index)
+	if a.IsPointer {
+		if source.IsNil() {
+			return nil, nil
+		} else {
+			return source.Interface().(any), nil
+		}
+	} else {
+		return source.Addr().Interface().(any), nil
+	}
 }
 
 type AnalyzedStruct struct {
@@ -96,6 +120,7 @@ func AnalyzeField[Parent any](parent Parent, index int) (AnalyzedField, error) {
 		LKName:       lkName,
 		FieldName:    structField.Name,
 		OverrideName: OverrideName,
+		StructField:  structField,
 		Type:         fieldType,
 		ValueType:    valueType,
 		Index:        index,
@@ -109,7 +134,7 @@ func camelCaseToKebabCase(in string) string {
 	for i, c := range in {
 		// Using unicode/runes
 		if unicode.IsUpper(c) {
-			if i > 0 && !unicode.IsUpper(prev) {
+			if i > 0 && !unicode.IsUpper(prev) && unicode.ToUpper(prev) != prev {
 				out += "-"
 			}
 			out += string(unicode.ToLower(c))

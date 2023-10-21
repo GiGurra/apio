@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 )
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -199,6 +200,13 @@ func (e Endpoint[Input, Output]) validateOutputHeadersType() {
 func (e Endpoint[Input, Output]) Handle(payload InputPayload) (EndpointOutputBase, error) {
 	var zeroInput Input
 	var zeroOutput Output
+
+	// make header keys lower case
+	for k, v := range payload.Headers {
+		delete(payload.Headers, k)
+		payload.Headers[strings.ToLower(k)] = v
+	}
+
 	input, err := zeroInput.parse(payload, e.getHeaderBindings(), e.getPathBindings(), e.getQueryBindings())
 	if err != nil {
 		return zeroOutput, NewError(http.StatusBadRequest, fmt.Sprintf("failed to parse input: %v", err), err)
