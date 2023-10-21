@@ -76,7 +76,7 @@ func TestGetUserSetting(t *testing.T) {
 			IntBasePath: "/api/v1",
 		}.WithEndpoints(
 			UserSettingEndpoints()...,
-		)
+		).Validate()
 
 	server := echo.New()
 

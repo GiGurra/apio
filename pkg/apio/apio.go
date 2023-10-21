@@ -31,6 +31,13 @@ func (a Api) WithEndpoints(endpoint ...EndpointBase) Api {
 	return a
 }
 
+func (a Api) Validate() Api {
+	for _, e := range a.Endpoints {
+		e.validate()
+	}
+	return a
+}
+
 type ErrResp struct {
 	Status int
 	ClMsg  string
@@ -54,6 +61,7 @@ type EndpointBase interface {
 	getPathPattern() string
 	getQueryPattern() string
 	invoke(payload inputPayload) (EndpointOutputBase, error)
+	validate()
 }
 
 type Endpoint[Input endpointInputBase, Output EndpointOutputBase] struct {
@@ -171,4 +179,9 @@ func (e Endpoint[Input, Output]) getPathPattern() string {
 
 func (e Endpoint[Input, Output]) getQueryPattern() string {
 	return e.getQueryBindings().FlatPath
+}
+
+func (e Endpoint[Input, Output]) validate() {
+	e.getPathPattern()   // panics if invalid
+	e.getQueryBindings() // panics if invalid
 }
