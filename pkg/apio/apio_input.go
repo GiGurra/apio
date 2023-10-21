@@ -16,10 +16,10 @@ type inputPayload struct {
 type endpointInputBase interface {
 	getHeaders() any
 	getPath() any
-	calcPathBinding() PathBinding
+	calcPathBindings() PathBindings
 	getQuery() any
 	getBody() any
-	parse(payload inputPayload, pathBinding PathBinding) (any, error)
+	parse(payload inputPayload, pathBinding PathBindings) (any, error)
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getHeaders() any {
@@ -32,7 +32,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getPath() any
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 	payload inputPayload,
-	pathBinding PathBinding,
+	pathBinding PathBindings,
 ) (any, error) {
 	fmt.Printf("todo: implement EndpointInput.parse\n")
 
@@ -53,19 +53,19 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 	return result, nil
 }
 
-type PathBinding struct {
+type PathBindings struct {
 	FlatPath string
 	Bindings map[string]fieldSetter
 }
 
-func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) calcPathBinding() PathBinding {
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) calcPathBindings() PathBindings {
 
 	pathT := reflect.TypeOf((*PathType)(nil)).Elem()
 	if pathT.Kind() != reflect.Struct {
 		panic("PathType must be a struct")
 	}
 
-	result := PathBinding{
+	result := PathBindings{
 		FlatPath: "",
 		Bindings: make(map[string]fieldSetter),
 	}
@@ -109,7 +109,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getBody() any
 	return e.Body
 }
 
-func calcPathBinding[Input endpointInputBase]() PathBinding {
+func calcPathBindings[Input endpointInputBase]() PathBindings {
 	var zero Input
-	return zero.calcPathBinding()
+	return zero.calcPathBindings()
 }

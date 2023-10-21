@@ -58,7 +58,7 @@ type EndpointBase interface {
 type Endpoint[Input endpointInputBase, Output EndpointOutputBase] struct {
 	Method      string
 	Handler     func(Input) (Output, error)
-	pathBinding *PathBinding
+	pathBinding *PathBindings
 }
 
 type EndpointInput[
@@ -120,9 +120,9 @@ func HeadersResponse[H any](headers H) EndpointOutput[H, X] {
 ////////////////////////////////////////////////////////////////////////////////////
 ///// PRIVATE IMPL
 
-func (e Endpoint[Input, Output]) getPathBinding() PathBinding {
+func (e Endpoint[Input, Output]) getPathBindings() PathBindings {
 	if e.pathBinding == nil {
-		b := calcPathBinding[Input]()
+		b := calcPathBindings[Input]()
 		e.pathBinding = &b
 	}
 	return *e.pathBinding
@@ -131,7 +131,7 @@ func (e Endpoint[Input, Output]) getPathBinding() PathBinding {
 func (e Endpoint[Input, Output]) invoke(payload inputPayload) (EndpointOutputBase, error) {
 	var zeroInput Input
 	var zeroOutput Output
-	input, err := zeroInput.parse(payload, e.getPathBinding())
+	input, err := zeroInput.parse(payload, e.getPathBindings())
 	if err != nil {
 		return zeroOutput, NewError(http.StatusBadRequest, fmt.Sprintf("failed to parse input: %v", err), err)
 	}
@@ -154,5 +154,5 @@ func (e Endpoint[Input, Output]) getMethod() string {
 }
 
 func (e Endpoint[Input, Output]) getPath() string {
-	return e.getPathBinding().FlatPath
+	return e.getPathBindings().FlatPath
 }
