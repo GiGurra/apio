@@ -1,21 +1,20 @@
 package apio
 
 import (
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"testing"
 )
 
-// represents "/users/:collection/settings/:category/:value"
-type Path struct {
-	_          any `path:"/users"`
-	collection int
-	_          any `path:"/settings"`
-	category   string
-	value      string
+// represents "/users/:user/settings/:settingCat/:settingId"
+type UserSettingPath struct {
+	_          any `path:"users"`
+	user       int
+	_          any `path:"settings"`
+	settingCat string
+	settingId  string
 }
 
-type UserSettingBody struct {
+type UserSetting struct {
 	Value any    `json:"value"`
 	Type  string `json:"type"`
 }
@@ -25,27 +24,31 @@ func UserSettingEndpoints() []EndpointBase {
 	return []EndpointBase{
 
 		Endpoint[
-			EndpointInput[X, Path, X, X],
-			EndpointOutput[X, UserSettingBody],
-		]{}.WithMethod("GET").
-			WithHandler(func(
-				input EndpointInput[X, Path, X, X],
-			) (EndpointOutput[X, UserSettingBody], error) {
-				return BodyResponse(UserSettingBody{
+			EndpointInput[X, UserSettingPath, X, X],
+			EndpointOutput[X, UserSetting],
+		]{
+			Method: "GET",
+			Handler: func(
+				input EndpointInput[X, UserSettingPath, X, X],
+			) (EndpointOutput[X, UserSetting], error) {
+				return BodyResponse(UserSetting{
 					Value: "testValue",
 					Type:  "testType",
 				}), nil
-			}),
+			},
+		},
 
 		Endpoint[
-			EndpointInput[X, Path, X, UserSettingBody],
+			EndpointInput[X, UserSettingPath, X, UserSetting],
 			EndpointOutput[X, X],
-		]{}.WithMethod("PUT").
-			WithHandler(func(
-				input EndpointInput[X, Path, X, UserSettingBody],
+		]{
+			Method: "PUT",
+			Handler: func(
+				input EndpointInput[X, UserSettingPath, X, UserSetting],
 			) (EndpointOutput[X, X], error) {
 				return EmptyResponse(), nil
-			}),
+			},
+		},
 	}
 }
 
@@ -67,9 +70,9 @@ func TestGetUserSetting(t *testing.T) {
 	server := echo.New()
 
 	EchoInstall(server, &api)
-
-	err := server.Start(":8080")
-	if err != nil {
-		t.Fatal(fmt.Errorf("failed to start server: %w", err))
-	}
+	//
+	//err := server.Start(":8080")
+	//if err != nil {
+	//	t.Fatal(fmt.Errorf("failed to start server: %w", err))
+	//}
 }

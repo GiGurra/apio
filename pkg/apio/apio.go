@@ -1,6 +1,9 @@
 package apio
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 type Payload interface {
 }
@@ -39,7 +42,45 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPath() any
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPathPattern() string {
-	return "" //TODO: calc path pattern
+
+	// iterate over fields in PathType
+
+	// Check that PathType is of type struct
+	pathT := reflect.TypeOf((*PathType)(nil)).Elem()
+
+	if pathT.Kind() != reflect.Struct {
+		panic("PathType must be a struct")
+	}
+
+	result := ""
+	alreadyTaken := make(map[string]bool)
+
+	// Iterate over fields in PathType
+	for i := 0; i < pathT.NumField(); i++ {
+		// Check if the field has path
+		field := pathT.Field(i)
+		if field.Name == "_" {
+			// We won't bind this parameter, but it is still needed in the path
+			// Check if it has a tag called path
+			pathTag := field.Tag.Get("path")
+			if pathTag == "" {
+				// Treat as wildcard
+				result += "/*"
+			} else {
+				// Treat as literal
+				result += "/" + pathTag
+			}
+		} else {
+			if alreadyTaken[field.Name] {
+				panic(fmt.Sprintf("field '%s' is already taken", field.Name))
+			}
+
+			alreadyTaken[field.Name] = true
+			result += "/:" + field.Name
+		}
+	}
+
+	return result
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetQuery() any {
@@ -106,9 +147,9 @@ func HeadersResponse[H any](headers H) EndpointOutput[H, X] {
 }
 
 type Endpoint[Input EndpointInputBase, Output EndpoitOutputBase] struct {
-	Method  string
-	Handler func(Input) (Output, error)
-	path    string
+	Method     string
+	Handler    func(Input) (Output, error)
+	cachedPath string
 }
 
 func calcPathPattern[Input EndpointInputBase]() string {
@@ -118,17 +159,11 @@ func calcPathPattern[Input EndpointInputBase]() string {
 
 func (e Endpoint[Input, Output]) WithMethod(method string) Endpoint[Input, Output] {
 	e.Method = method
-	if e.path == "" {
-		e.path = calcPathPattern[Input]()
-	}
 	return e
 }
 
 func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, error)) Endpoint[Input, Output] {
 	e.Handler = handler
-	if e.path == "" {
-		e.path = calcPathPattern[Input]()
-	}
 	return e
 }
 
@@ -137,7 +172,10 @@ func (e Endpoint[Input, Output]) GetMethod() string {
 }
 
 func (e Endpoint[Input, Output]) GetPath() string {
-	return e.path
+	if e.cachedPath == "" {
+		e.cachedPath = calcPathPattern[Input]()
+	}
+	return e.cachedPath
 }
 
 type Server struct {
