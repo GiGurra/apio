@@ -36,7 +36,7 @@ func UserSettingEndpoints() []EndpointBase {
 				fmt.Printf("invoked GET path with input: %+v\n", input)
 				return BodyResponse(UserSetting{
 					Value: "testValue",
-					Type:  "testType",
+					Type:  fmt.Sprintf("input=%+v", input.Path),
 				}), nil
 			},
 		},
