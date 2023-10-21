@@ -49,8 +49,8 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 
 	// parse headers
 	for name, setter := range headerBindings.Bindings {
-		inputValue := payload.Query[name]
-		valueToSet := reflect.ValueOf(&result.Query).Elem().FieldByName(name)
+		inputValue := payload.Headers[name]
+		valueToSet := reflect.ValueOf(&result.Headers).Elem().FieldByName(name)
 		if len(inputValue) > 1 {
 			return result, fmt.Errorf("repeated header parameters not yet supported, field: %s", name)
 		}
