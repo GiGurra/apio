@@ -10,13 +10,13 @@ It asks the question:
 
 ## Example
 
+First we specify one or more endpoints
+
 ```go
-package main
+package common
 
 import (
-	"fmt"
 	. "github.com/GiGurra/apio/pkg/apio"
-	"github.com/labstack/echo/v4"
 	"net/http"
 )
 
@@ -49,16 +49,35 @@ type OutputHeaders struct {
 	ContentType string `name:"Content-Type"`
 }
 
+var GetEndpointSpec = Endpoint[
+	EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
+	EndpointOutput[X, UserSetting],
+]{Method: http.MethodGet}
+
+var PutEndpointSpec = Endpoint[
+	EndpointInput[X, UserSettingPath, X, UserSetting],
+	EndpointOutput[OutputHeaders, X],
+]{Method: http.MethodPost}
+```
+
+Then we start a server:
+
+```go
+package main
+
+import (
+	"fmt"
+	. "github.com/GiGurra/apio/cmd/examples/common"
+	. "github.com/GiGurra/apio/pkg/apio"
+	"github.com/labstack/echo/v4"
+)
+
 func UserSettingEndpoints() []EndpointBase {
 
 	return []EndpointBase{
 
-		Endpoint[
-			EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
-			EndpointOutput[X, UserSetting],
-		]{
-			Method: http.MethodGet,
-			Handler: func(
+		GetEndpointSpec.
+			WithHandler(func(
 				input EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
 			) (EndpointOutput[X, UserSetting], error) {
 				fmt.Printf("invoked GET path with input: %+v\n", input)
@@ -66,23 +85,16 @@ func UserSettingEndpoints() []EndpointBase {
 					Value: "testValue",
 					Type:  fmt.Sprintf("input=%+v", input),
 				}), nil
-			},
-		},
+			}),
 
-		Endpoint[
-			EndpointInput[X, UserSettingPath, X, UserSetting],
-			EndpointOutput[OutputHeaders, X],
-		]{
-			Method: http.MethodPut,
-			Handler: func(
-				input EndpointInput[X, UserSettingPath, X, UserSetting],
-			) (EndpointOutput[OutputHeaders, X], error) {
-				fmt.Printf("invoked PUT path with input: %+v\n", input)
-				return HeadersResponse(OutputHeaders{
-					ContentType: "application/json",
-				}), nil
-			},
-		},
+		PutEndpointSpec.WithHandler(func(
+			input EndpointInput[X, UserSettingPath, X, UserSetting],
+		) (EndpointOutput[OutputHeaders, X], error) {
+			fmt.Printf("invoked PUT path with input: %+v\n", input)
+			return HeadersResponse(OutputHeaders{
+				ContentType: "application/json",
+			}), nil
+		}),
 	}
 }
 
@@ -107,4 +119,56 @@ func main() {
 
 	_ = echoServer.Start(":8080")
 }
+
+```
+
+Then we can use the client:
+
+```go
+package main
+
+import (
+	"fmt"
+	. "github.com/GiGurra/apio/cmd/examples/common"
+	. "github.com/GiGurra/apio/pkg/apio"
+)
+
+func ptr[T any](v T) *T {
+	return &v
+}
+
+func main() {
+	server := Server{
+		Scheme:   "http",
+		Host:     "localhost",
+		Port:     8080,
+		BasePath: "/api/v1",
+		HttpVer:  "1.1",
+	}
+
+	input := NewInput(
+		UserSettingHeaders{
+			Yo:          "yo",
+			ContentType: "application/json",
+		},
+		UserSettingPath{
+			User:       123,
+			SettingCat: "cat",
+			SettingId:  "id",
+		},
+		UserSettingQuery{
+			Foo: ptr("foo"),
+			Bar: 123,
+		},
+		X{}, // No body sent (this is a GET call)
+	)
+
+	res, err := GetEndpointSpec.Call(server, input)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("res: %+v\n", res)
+}
+
 ```
