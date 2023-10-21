@@ -63,6 +63,10 @@ func getStringParsePtrFn(tpe reflect.Type) (func(string) (any, error), error) {
 	// We just try to json deserialize first quoted, then unquoted.
 	// YES this is crappy, but, we can optimize later. Moving on...
 
+	if tpe.Kind() == reflect.Ptr {
+		tpe = tpe.Elem()
+	}
+
 	return func(from string) (interface{}, error) {
 
 		// First quoted (pretty silly, yes)
