@@ -5,12 +5,22 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"io"
+	"strings"
 )
 
 func EchoInstall(echoServer *echo.Echo, api *Api) {
 	for _, endpoint := range api.Endpoints {
-		fmt.Printf("%s %s\n", endpoint.GetMethod(), endpoint.GetPath())
-		echoServer.Add(endpoint.GetMethod(), endpoint.GetPath(), func(ctx echo.Context) error {
+
+		path := func() string {
+			if api.IntBasePath == "" {
+				return endpoint.GetPath()
+			} else {
+				return api.IntBasePath + "/" + strings.TrimPrefix(endpoint.GetPath(), "/")
+			}
+		}()
+
+		fmt.Printf("%s %s\n", endpoint.GetMethod(), path)
+		echoServer.Add(endpoint.GetMethod(), path, func(ctx echo.Context) error {
 
 			headers := map[string][]string{}
 			for k, v := range ctx.Request().Header {
