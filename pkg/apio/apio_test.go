@@ -1,8 +1,9 @@
 package apio
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/labstack/echo/v4"
+	"github.com/google/go-cmp/cmp"
 	"net/http"
 	"testing"
 )
@@ -22,12 +23,17 @@ type UserSettingQuery struct {
 }
 
 type UserSetting struct {
-	Value any    `json:"value"`
-	Type  string `json:"type"`
+	Value any     `json:"value"`
+	Type  string  `json:"type"`
+	Opt   *string `json:"opt"`
 }
 
 type UserSettingHeaders struct {
 	Yo          any
+	ContentType string `name:"Content-Type"`
+}
+
+type OutputHeaders struct {
 	ContentType string `name:"Content-Type"`
 }
 
@@ -53,47 +59,118 @@ func UserSettingEndpoints() []EndpointBase {
 
 		Endpoint[
 			EndpointInput[X, UserSettingPath, X, UserSetting],
-			EndpointOutput[X, X],
+			EndpointOutput[OutputHeaders, X],
 		]{
 			Method: http.MethodPut,
 			Handler: func(
 				input EndpointInput[X, UserSettingPath, X, UserSetting],
-			) (EndpointOutput[X, X], error) {
+			) (EndpointOutput[OutputHeaders, X], error) {
 				fmt.Printf("invoked PUT path with input: %+v\n", input)
-				return EmptyResponse(), nil
+				return HeadersResponse(OutputHeaders{
+					ContentType: "application/json",
+				}), nil
 			},
 		},
 	}
 }
 
+var testApi = Api{
+	Name: "My test API",
+	Servers: []Server{{
+		Scheme:   "https",
+		Host:     "api.example.com",
+		Port:     443,
+		BasePath: "/api/v1",
+		HttpVer:  "1.1",
+	}},
+	IntBasePath: "/api/v1",
+}.WithEndpoints(
+	UserSettingEndpoints()...,
+).Validate()
+
 func TestGetUserSetting(t *testing.T) {
 
-	api :=
-		Api{
-			Name: "My test API",
-			Servers: []Server{{
-				Scheme:   "https",
-				Host:     "api.example.com",
-				Port:     443,
-				BasePath: "/api/v1",
-				HttpVer:  "1.1",
-			}},
-			IntBasePath: "/api/v1",
-		}.WithEndpoints(
-			UserSettingEndpoints()...,
-		).Validate()
+	getEndpoint := func() EndpointBase {
+		for _, e := range testApi.Endpoints {
+			if e.getMethod() == http.MethodGet {
+				return e
+			}
+		}
+		panic("no GET endpoint found")
+	}()
 
-	server := echo.New()
+	result, err := getEndpoint.invoke(inputPayload{
+		Headers: map[string][]string{
+			"Content-Type": {"application/json"},
+			"Yo":           {"da"},
+		},
+		Path: map[string]string{
+			"User":       "123",
+			"SettingCat": "foo",
+			"SettingId":  "bar",
+		},
+		Query: map[string][]string{
+			"Foo": {"foo"},
+			"Bar": {"123"},
+		},
+	})
 
-	// add recovery middleware
-	//server.Use(middleware.Recover())
-
-	fmt.Printf("api: %+v\n", api)
-
-	EchoInstall(server, &api)
-
-	err := server.Start(":8080")
 	if err != nil {
-		t.Fatal(fmt.Errorf("failed to start server: %w", err))
+		t.Fatal(fmt.Errorf("failed to invoke endpoint: %w", err))
 	}
+
+	if result.GetCode() != http.StatusOK {
+		t.Fatal(fmt.Errorf("unexpected status code: %d", result.GetCode()))
+	}
+
+	fmt.Printf("result: %+v\n", result)
+}
+
+func must[T any](t T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func TestPutUserSetting(t *testing.T) {
+
+	getEndpoint := func() EndpointBase {
+		for _, e := range testApi.Endpoints {
+			if e.getMethod() == http.MethodPut {
+				return e
+			}
+		}
+		panic("no PUT endpoint found")
+	}()
+
+	result, err := getEndpoint.invoke(inputPayload{
+		Path: map[string]string{
+			"User":       "123",
+			"SettingCat": "foo",
+			"SettingId":  "bar",
+		},
+		Body: must(json.Marshal(UserSetting{
+			Value: "testValue",
+			Type:  "testType",
+		})),
+	})
+
+	if err != nil {
+		t.Fatal(fmt.Errorf("failed to invoke endpoint: %w", err))
+	}
+
+	if result.GetCode() != http.StatusNoContent {
+		t.Fatal(fmt.Errorf("unexpected status code: %d", result.GetCode()))
+	}
+
+	expHeaders := map[string][]string{
+		"Content-Type": {"application/json"},
+	}
+
+	if diff := cmp.Diff(result.GetHeaders(), expHeaders); diff != "" {
+		t.Fatal(fmt.Errorf("unexpected headers: %s", diff))
+	}
+
+	fmt.Printf("result: %+v\n", result)
 }

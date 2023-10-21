@@ -1,7 +1,9 @@
 package apio
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 )
@@ -19,6 +21,7 @@ type endpointInputBase interface {
 	calcHeaderBindings() HeaderBindings
 	calcPathBindings() PathBindings
 	calcQueryBindings() QueryBindings
+	validateBodyType()
 	getQuery() any
 	getBody() any
 	parse(
@@ -43,7 +46,6 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 	pathBindings PathBindings,
 	queryBindings QueryBindings,
 ) (any, error) {
-	fmt.Printf("todo: implement EndpointInput.parse\n")
 
 	var result EndpointInput[HeadersType, PathType, QueryType, BodyType]
 
@@ -109,6 +111,22 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 			return result, fmt.Errorf("failed to set query parameter '%s': %w", name, err)
 		}
 	}
+
+	// parse body
+	bodyT := reflect.TypeOf(e.Body)
+	if bodyT.Kind() != reflect.Struct {
+		return result, NewError(http.StatusInternalServerError, "BodyType must be a struct, this should have been caught in initial validation step", nil)
+	}
+
+	// num fields in body
+	numFields := bodyT.NumField()
+	if numFields >= 1 {
+		err := json.Unmarshal(payload.Body, &result.Body)
+		if err != nil {
+			return result, fmt.Errorf("failed to unmarshal body: %w", err)
+		}
+	}
+
 	return result, nil
 }
 
@@ -238,6 +256,13 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) calcQueryBind
 	}
 
 	return result
+}
+
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) validateBodyType() {
+	bodyT := reflect.TypeOf(e.Body)
+	if bodyT.Kind() != reflect.Struct {
+		panic("BodyType must be a struct")
+	}
 }
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) getQuery() any {
