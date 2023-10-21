@@ -182,6 +182,6 @@ func (e Endpoint[Input, Output]) getQueryPattern() string {
 }
 
 func (e Endpoint[Input, Output]) validate() {
-	e.getPathPattern()   // panics if invalid
+	e.getPathBindings()  // panics if invalid
 	e.getQueryBindings() // panics if invalid
 }
