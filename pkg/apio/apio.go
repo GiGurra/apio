@@ -66,6 +66,7 @@ type Endpoint[Input, Output any] struct {
 }
 
 func (e Endpoint[Input, Output]) WithMethod(method string) Endpoint[Input, Output] {
+	// TODO calc and set path
 	e.Method = method
 	return e
 }
@@ -75,17 +76,11 @@ func (e Endpoint[Input, Output]) WithHandler(handler func(Input) (Output, error)
 	return e
 }
 
-func (e Endpoint[Input, Output]) Build() Endpoint[Input, Output] {
-	e.path = "" // TODO build path
-	return e
-}
-
 func (e Endpoint[Input, Output]) GetMethod() string {
 	return e.Method
 }
 
 func (e Endpoint[Input, Output]) GetPath() string {
-	// TODO flatten path
 	return e.path
 }
 
