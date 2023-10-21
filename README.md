@@ -19,7 +19,7 @@ It asks the question:
 
 ### API definition
 
-First we specify a resource, with one or more endpoints in a package:
+An API consists of one or more resources, each with one or more endpoints:
 
 ```go
 package user_setting
