@@ -79,6 +79,7 @@ type EndpointBase interface {
 	GetOutput() EndpointOutputBase
 	GetInput() EndpointInputBase
 	OkCode() int
+	GetTags() []string
 }
 
 type Endpoint[Input EndpointInputBase, Output EndpointOutputBase] struct {
@@ -88,6 +89,7 @@ type Endpoint[Input EndpointInputBase, Output EndpointOutputBase] struct {
 	Description    string
 	Method         string
 	Handler        func(Input) (Output, error)
+	Tags           []string
 	headerBindings *HeaderBindings
 	pathBindings   *PathBindings
 	queryBindings  *QueryBindings
@@ -106,6 +108,10 @@ func (e Endpoint[Input, Output]) GetInput() EndpointInputBase {
 func (e Endpoint[Input, Output]) OkCode() int {
 	var zero Output
 	return zero.OkCode()
+}
+
+func (e Endpoint[Input, Output]) GetTags() []string {
+	return e.Tags
 }
 
 func (e Endpoint[Input, Output]) GetId() string {

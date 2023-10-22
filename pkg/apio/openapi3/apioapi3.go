@@ -52,6 +52,7 @@ type Operation struct {
 	Parameters  []Parameter         `json:"parameters" yaml:"parameters" text:"parameters"`
 	RequestBody *RequestBody        `json:"requestBody,omitempty" yaml:"requestBody,omitempty" text:"requestBody,omitempty"`
 	Responses   map[string]Response `json:"responses" yaml:"responses" text:"responses"`
+	Tags        []string            `json:"tags,omitempty" yaml:"tags,omitempty" text:"tags,omitempty"`
 }
 
 func ToOpenApi3(api apio.Api) OpenApi {
@@ -240,6 +241,7 @@ func GetPaths(api apio.Api) map[string]any {
 			Summary:     e.GetSummary(),
 			Description: e.GetDescription(),
 			OperationId: e.GetId(),
+			Tags:        e.GetTags(),
 			Parameters:  GetParameters(e),
 			Responses: map[string]Response{
 				strconv.Itoa(e.OkCode()): {

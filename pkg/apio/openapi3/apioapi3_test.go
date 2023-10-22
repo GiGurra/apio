@@ -41,8 +41,9 @@ func TestToOpenApi3(t *testing.T) {
 		Method:      http.MethodGet,
 		ID:          "GetUser",
 		Name:        "GetUser",
-		Summary:     "GetUser",
-		Description: "GetUser",
+		Summary:     "Get a user by id",
+		Description: "Get a user by id, the long description.",
+		Tags:        []string{"Users"},
 	}
 
 	testApi := apio.Api{
