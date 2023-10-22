@@ -19,12 +19,12 @@ func main() {
 		HttpVer:  "1.1",
 	}
 
-	input := NewInput(
+	input1 := NewInput(
 		user_setting.Headers{
 			Yo:          "yo",
 			ContentType: "application/json",
 		},
-		user_setting.Path{
+		user_setting.PathById{
 			User:       123,
 			SettingCat: "cat",
 			SettingId:  "id",
@@ -36,10 +36,29 @@ func main() {
 		Empty, // no body in this get call
 	)
 
-	res, err := user_setting.Get.RPC(server, input, DefaultOpts())
-	if err != nil {
-		panic(fmt.Sprintf("failed to call RPC GET endpoint: %v", err))
+	res1, err1 := user_setting.GetById.RPC(server, input1, DefaultOpts())
+	if err1 != nil {
+		panic(fmt.Sprintf("failed to call RPC GET endpoint: %v", err1))
 	}
 
-	fmt.Printf("res: %+v\n", res)
+	fmt.Printf("res: %+v\n", res1)
+
+	input2 := NewInput(
+		user_setting.Headers{
+			Yo:          "yo",
+			ContentType: "application/json",
+		},
+		user_setting.PathAll{
+			User: 123,
+		},
+		Empty, // no query in this get call
+		Empty, // no body in this get call
+	)
+
+	res2, err2 := user_setting.GetAll.RPC(server, input2, DefaultOpts())
+	if err2 != nil {
+		panic(fmt.Sprintf("failed to call RPC GET all endpoint: %v", err1))
+	}
+
+	fmt.Printf("res: %+v\n", res2)
 }

@@ -5,13 +5,26 @@ import (
 	"net/http"
 )
 
-// Path represents "/users/:user/settings/:settingCat/:settingId"
-type Path struct {
+// PathWithId represents "/users/:user/settings/:settingCat/:settingId"
+type PathById struct {
 	_          any `path:"/users"`
 	User       int
 	_          any `path:"/settings"`
 	SettingCat string
 	SettingId  string
+}
+
+type PathByCat struct {
+	_          any `path:"/users"`
+	User       int
+	_          any `path:"/settings"`
+	SettingCat string
+}
+
+type PathAll struct {
+	_    any `path:"/users"`
+	User int
+	_    any `path:"/settings"`
 }
 
 type Query struct {
@@ -34,9 +47,20 @@ type RespHeaders struct {
 	ContentType string `name:"Content-Type"`
 }
 
-var Get = Endpoint[
-	EndpointInput[Headers, Path, Query, X],
+var GetAll = Endpoint[
+	EndpointInput[Headers, PathAll, X, X],
 	EndpointOutput[RespHeaders, []Body],
+]{
+	Method:      http.MethodGet,
+	ID:          "getUserSettings",
+	Summary:     "Get all user setting",
+	Description: "This operation retrieves all user settings",
+	Tags:        []string{"Users"},
+}
+
+var GetById = Endpoint[
+	EndpointInput[Headers, PathById, Query, X],
+	EndpointOutput[RespHeaders, Body],
 ]{
 	Method:      http.MethodGet,
 	ID:          "getUserSetting",
@@ -45,8 +69,8 @@ var Get = Endpoint[
 	Tags:        []string{"Users"},
 }
 
-var Put = Endpoint[
-	EndpointInput[X, Path, X, []Body],
+var PutById = Endpoint[
+	EndpointInput[X, PathById, X, Body],
 	EndpointOutput[RespHeaders, X],
 ]{
 	Method:      http.MethodPut,

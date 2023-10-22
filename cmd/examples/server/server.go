@@ -13,9 +13,9 @@ func UserSettingEndpoints() []EndpointBase {
 
 	return []EndpointBase{
 
-		user_setting.Get.
+		user_setting.GetAll.
 			WithHandler(func(
-				input EndpointInput[user_setting.Headers, user_setting.Path, user_setting.Query, X],
+				input EndpointInput[user_setting.Headers, user_setting.PathAll, X, X],
 			) (EndpointOutput[user_setting.RespHeaders, []user_setting.Body], error) {
 				fmt.Printf("invoked GET path with input: %+v\n", input)
 				return Response(
@@ -29,9 +29,25 @@ func UserSettingEndpoints() []EndpointBase {
 				), nil
 			}),
 
-		user_setting.Put.
+		user_setting.GetById.
 			WithHandler(func(
-				input EndpointInput[X, user_setting.Path, X, []user_setting.Body],
+				input EndpointInput[user_setting.Headers, user_setting.PathById, user_setting.Query, X],
+			) (EndpointOutput[user_setting.RespHeaders, user_setting.Body], error) {
+				fmt.Printf("invoked GET path with input: %+v\n", input)
+				return Response(
+					user_setting.RespHeaders{
+						ContentType: "application/json",
+					},
+					user_setting.Body{
+						Value: "testValue",
+						Type:  fmt.Sprintf("input=%+v", input),
+					},
+				), nil
+			}),
+
+		user_setting.PutById.
+			WithHandler(func(
+				input EndpointInput[X, user_setting.PathById, X, user_setting.Body],
 			) (EndpointOutput[user_setting.RespHeaders, X], error) {
 				fmt.Printf("invoked PUT path with input: %+v\n", input)
 				return HeadersResponse(user_setting.RespHeaders{
