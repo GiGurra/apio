@@ -88,8 +88,11 @@ var Put = Endpoint[
 
 ### Server
 
-Then we create a server, for example with Echo Server:
-(but it could be any server implementation)
+Then we create a server. We use the previously defined endpoints specifications and attach handlers to each.
+We can do this in a single source file or split/grouped into multiple files, whatever you prefer.
+
+Here is a simple example using an Echo Server:
+(it could be any server implementation)
 
 ```go
 package main
