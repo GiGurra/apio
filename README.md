@@ -4,15 +4,15 @@ This is a **very** experimental declarative server- and client-side http API lib
 It is inspired by Tapir (scala). Again, this is an experiment. You should **_probably_** just generate your server and
 client from an OpenAPI spec instead.
 
-You define your API in a type-safe way with declarative Go code, and then
-get access to type safe client and server APIs in go (no code generation).
+This library asks the question:
 
-You can also (in theory ;)) generate an OpenAPI/swagger spec from the API definition.
+* What do we need to describe an API using the Go type system?
 
-It asks the question:
+It lets you:
 
-* What do we need to describe an API entirely within the Go type system, but to be able to always generate a valid API
-  specification from it? (ofc it also has to work :D)
+* Define your API in a type-safe way with declarative Go code
+* Get access to type safe client and server APIs in go (no code generation).
+* Generate an OpenAPI/swagger spec from the API definition.
 
 ## Example
 
