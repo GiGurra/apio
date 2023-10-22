@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/GiGurra/apio/pkg/apio"
+	"github.com/google/go-cmp/cmp"
 	"net/http"
 	"testing"
 )
@@ -71,4 +72,129 @@ func TestToOpenApi3(t *testing.T) {
 		t.Fatal(fmt.Errorf("failed to marshal OpenAPI 3 spec: %v", err))
 	}
 	fmt.Printf("openApi3: %s\n", openApi3Str)
+
+	refJson := make(map[string]any)
+	err = json.Unmarshal([]byte(refJsonStr), &refJson)
+	if err != nil {
+		t.Fatal(fmt.Errorf("failed to unmarshal reference OpenAPI 3 spec: %v", err))
+	}
+
+	actualJson := make(map[string]any)
+	err = json.Unmarshal(openApi3Str, &actualJson)
+	if err != nil {
+		t.Fatal(fmt.Errorf("failed to unmarshal actual OpenAPI 3 spec: %v", err))
+	}
+
+	if diff := cmp.Diff(refJson, actualJson); diff != "" {
+		t.Fatalf("OpenAPI 3 spec mismatch:\n%s", diff)
+	}
 }
+
+var refJsonStr = `
+{
+  "openapi": "3.0.0",
+  "info": {
+    "description": "This is a test API.",
+    "title": "My test API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com:443/api/v1",
+      "description": "My test server - My test server description"
+    }
+  ],
+  "paths": {
+    "/users/{User}": {
+      "get": {
+        "summary": "Get a user by id",
+        "description": "Get a user by id, the long description.",
+        "operationId": "GetUser",
+        "parameters": [
+          {
+            "name": "Yo",
+            "in": "header",
+            "description": "Yo",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User",
+            "in": "path",
+            "description": "User",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/openapi3_User"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "openapi3_Address": {
+        "type": "object",
+        "properties": {
+          "City": {
+            "type": "string"
+          },
+          "Street": {
+            "type": "string"
+          },
+          "ZipCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "Street",
+          "City",
+          "ZipCode"
+        ]
+      },
+      "openapi3_User": {
+        "type": "object",
+        "properties": {
+          "Address": {
+            "$ref": "#/components/schemas/openapi3_Address"
+          },
+          "Email": {
+            "type": "string"
+          },
+          "ExtraAddresses": {
+            "items": {
+              "$ref": "#/components/schemas/openapi3_Address"
+            },
+            "type": "array"
+          },
+          "Name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "Name",
+          "Email",
+          "Address",
+          "ExtraAddresses"
+        ]
+      }
+    }
+  }
+}`
