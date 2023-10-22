@@ -1,9 +1,10 @@
 # apio
 
 This is a **very** experimental declarative server- and client-side http API library for Go.
-It is inspired by Tapir (scala). It's just a proof of concept. I have stopped working on it,
-because it is too much work and just inventing a solution for a non-existing problem :D.
-!!! Just generate code from OpenAPI specs instead !!!
+It is inspired by Tapir (scala).
+
+Again, this is an experiment. You should **_probably_** just generate your server and client from an OpenAPI spec
+instead.
 
 You define your API in a type-safe way with declarative Go code, and then
 get access to type safe client and server APIs in go (no code generation).
