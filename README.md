@@ -255,3 +255,9 @@ func main() {
 
 ![img_1.png](img_1.png)
 
+
+## TODO
+
+* [ ] Add support for struct composition
+* [ ] Add support for other content types than JSON
+
