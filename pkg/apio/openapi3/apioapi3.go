@@ -337,7 +337,11 @@ func schemaNameOf(structInfo apio.AnalyzedStruct) string {
 	raw := lastPart + "/" + structInfo.Name
 	// keep only alphanumeric characters, underscores and '-'s. Replace all other characters with '_'
 	return strings.Map(func(r rune) rune {
-		if r == '-' || r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= 9) {
+		if r == '-' ||
+			r == '_' ||
+			(r >= 'a' && r <= 'z') ||
+			(r >= 'A' && r <= 'Z') ||
+			(r >= '0' && r <= '9') {
 			return r
 		}
 		return '_'

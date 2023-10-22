@@ -26,9 +26,10 @@ func TestToOpenApi3(t *testing.T) {
 	}
 
 	type User struct {
-		Name    string
-		Email   string
-		Address Address
+		Name           string
+		Email          string
+		Address        Address
+		ExtraAddresses []Address
 	}
 
 	type X = apio.X
