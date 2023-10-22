@@ -102,7 +102,11 @@ func (a *AnalyzedStruct) HasContent() bool {
 }
 
 func AnalyzeField[Parent any](parent Parent, index int) (AnalyzedField, error) {
-	structField := reflect.TypeOf(parent).Field(index)
+	return AnalyzeFieldType(reflect.TypeOf(parent), index)
+}
+
+func AnalyzeFieldType(parentT reflect.Type, index int) (AnalyzedField, error) {
+	structField := parentT.Field(index)
 	fieldType := structField.Type
 	isPointer := fieldType.Kind() == reflect.Ptr
 
@@ -151,9 +155,11 @@ func camelCaseToKebabCase(in string) string {
 }
 
 func AnalyzeStruct[T any](t T) (AnalyzedStruct, error) {
+	return AnalyzeStructType(reflect.TypeOf(t))
+}
+func AnalyzeStructType(tpe reflect.Type) (AnalyzedStruct, error) {
 
 	// Check that it is a struct
-	tpe := reflect.TypeOf(t)
 	if tpe.Kind() != reflect.Struct {
 		return AnalyzedStruct{}, fmt.Errorf("expected struct, got %v", tpe.Kind())
 	}
@@ -179,7 +185,7 @@ func AnalyzeStruct[T any](t T) (AnalyzedStruct, error) {
 			continue
 		}
 
-		analyzed, err := AnalyzeField(t, i)
+		analyzed, err := AnalyzeFieldType(tpe, i)
 		if err != nil {
 			return AnalyzedStruct{}, fmt.Errorf("failed to analyze field %v: %v", field.Name, err)
 		}

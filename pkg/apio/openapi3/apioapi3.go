@@ -1,6 +1,7 @@
 package openapi3
 
 import (
+	"fmt"
 	"github.com/GiGurra/apio/pkg/apio"
 	"reflect"
 	"strconv"
@@ -93,6 +94,33 @@ func apioPattern2OpenApi3Pattern(pattern string) string {
 	return result
 }
 
+func goTypeToOpenapiSchemaRef(t reflect.Type) map[string]any {
+	switch t.Kind() {
+	case reflect.Pointer:
+		return goTypeToOpenapiSchemaRef(t.Elem())
+	case reflect.Slice:
+		return map[string]any{
+			"type":  "array",
+			"items": goTypeToOpenapiSchemaRef(t.Elem()),
+		}
+	case reflect.Struct:
+		// Here we need to do further analysis
+		structInfo, err := apio.AnalyzeStructType(t)
+		if err != nil {
+			panic(fmt.Errorf("failed to analyze struct: %v", err))
+		}
+		return map[string]any{
+			"schema": map[string]any{
+				"$ref": "#/components/schemas/" + schemaNameOf(structInfo),
+			},
+		}
+	default:
+		return map[string]any{
+			"type": goTypeToOpenapiType(t),
+		}
+	}
+}
+
 func goTypeToOpenapiType(t reflect.Type) string {
 	switch t.Kind() {
 	case reflect.Bool:
@@ -124,7 +152,7 @@ func goTypeToOpenapiType(t reflect.Type) string {
 	case reflect.String:
 		return "string"
 	case reflect.Interface:
-		fallthrough
+		return "object"
 	case reflect.Struct:
 		return "object"
 	case reflect.Ptr:
@@ -243,7 +271,48 @@ func GetPaths(api apio.Api) map[string]any {
 	return result
 }
 
-func GetComponents(api apio.Api) map[string]any {
+func GetComponentsOfApi(api apio.Api) map[string]any {
+
+}
+
+func GetComponentsOfType(t reflect.Type) map[string]any {
+	switch t.Kind() {
+	case reflect.Struct:
+		structInfo, err := apio.AnalyzeStructType(t)
+		if err != nil {
+			panic(fmt.Errorf("failed to analyze struct: %v", err))
+		}
+
+	}
+}
+
+func GetComponentsOfStruct(structInfo apio.AnalyzedStruct) map[string]any {
+	schemas := make(map[string]any)
+	if structInfo.HasContent() {
+		props := make(map[string]any)
+		required := make([]string, 0)
+
+		for _, field := range structInfo.Fields {
+			props[field.Name] = goTypeToOpenapiSchemaRef(field.ValueType)
+			if field.IsRequired() {
+				required = append(required, field.Name)
+			}
+			newDefs := GetComponentsOfType(field.ValueType)
+			for k, v := range newDefs {
+				schemas[k] = v
+			}
+		}
+
+		schemas[schemaNameOf(structInfo)] = Schema{
+			Type:       "object",
+			Properties: props,
+			Required:   required,
+		}
+	}
+	return schemas
+}
+
+func GetComponentsOfType(api apio.Api) map[string]any {
 
 	schemas := make(map[string]any)
 	for _, e := range api.Endpoints {
@@ -251,21 +320,19 @@ func GetComponents(api apio.Api) map[string]any {
 			e.GetBodyOutputInfo(),
 			e.GetBodyInputInfo(),
 		}
-		for _, bodyInfo := range bodyInfos {
-			if bodyInfo.HasContent() {
+		for _, structInfo := range bodyInfos {
+			if structInfo.HasContent() {
 				props := make(map[string]any)
 				required := make([]string, 0)
 
-				for _, field := range bodyInfo.Fields {
-					props[field.Name] = map[string]any{
-						"type": goTypeToOpenapiType(field.ValueType),
-					}
+				for _, field := range structInfo.Fields {
+					props[field.Name] = goTypeToOpenapiSchemaRef(field.ValueType)
 					if field.IsRequired() {
 						required = append(required, field.Name)
 					}
 				}
 
-				schemas[schemaNameOf(bodyInfo)] = Schema{
+				schemas[schemaNameOf(structInfo)] = Schema{
 					Type:       "object",
 					Properties: props,
 					Required:   required,
