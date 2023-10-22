@@ -146,6 +146,7 @@ func main() {
 	// You can use whatever router/server you want, I just happened to use Echo here.
 	// apio comes with a helper function to install the endpoints on an Echo server,
 	// but you can also do this manually/add your own integration if you want to.
+	// see https://github.com/GiGurra/apio/blob/main/pkg/apio/apio_echo.go
 	EchoInstall(echoServer, &testApi)
 
 	_ = echoServer.Start(":8080")
