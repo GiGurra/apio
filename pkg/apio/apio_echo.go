@@ -87,14 +87,14 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 					return ctx.String(errResp.Status, errResp.ClMsg)
 				} else {
 					slog.Error(fmt.Sprintf("error: %v", err))
-					return ctx.String(500, fmt.Sprintf("internal error, see server logs"))
+					return ctx.String(http.StatusInternalServerError, fmt.Sprintf("internal error, see server logs"))
 				}
 			}
 
 			outputBodyBytes, err := result.GetBody()
 			if err != nil {
 				slog.Error(fmt.Sprintf("error getting body: %v", err))
-				return ctx.String(500, fmt.Sprintf("internal error, see server logs"))
+				return ctx.String(http.StatusInternalServerError, fmt.Sprintf("internal error, see server logs"))
 			}
 
 			// write headers
