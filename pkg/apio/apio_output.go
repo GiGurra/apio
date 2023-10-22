@@ -74,6 +74,7 @@ func (e EndpointOutput[HeadersType, BodyType]) SetHeaders(hdrs map[string][]stri
 		panic(fmt.Errorf("expected output headers to be a struct, got %s", headersType.Kind()))
 	}
 
+	// TODO: Use cached & fast description of headers struct here, instead of reflecting every time
 	// Check that all headers are present
 	for k, vs := range hdrs {
 		for _, v := range vs {

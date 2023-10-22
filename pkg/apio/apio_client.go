@@ -82,19 +82,19 @@ func (e Endpoint[Input, Output]) RPC(
 		}
 	}
 
-	newBodAny, err := result.SetBody(bodyBytes)
+	resultUntyped, err := result.SetBody(bodyBytes)
 	if err != nil {
 		return result, fmt.Errorf("failed to set body: %w", err)
 	}
-	result = newBodAny.(Output)
+	result = resultUntyped.(Output)
 
-	newBodAny, err = result.SetHeaders(resp.Header)
+	resultUntyped, err = result.SetHeaders(resp.Header)
 	if err != nil {
 		return result, fmt.Errorf("failed to set headers: %w", err)
 	}
-	result = newBodAny.(Output)
+	result = resultUntyped.(Output)
 
-	result = newBodAny.(Output)
+	result = resultUntyped.(Output)
 
 	return result, nil
 
