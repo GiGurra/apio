@@ -24,6 +24,10 @@ func (e Endpoint[Input, Output]) RPC(
 	opts RPCOpts,
 ) (Output, error) {
 
+	if e.Handler != nil { // means we are testing locally, and have mocked the other side
+		return e.Handler(input)
+	}
+
 	var result Output
 	payload, err := input.ToPayload()
 	if err != nil {
