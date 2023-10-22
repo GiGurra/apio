@@ -23,7 +23,11 @@ type FieldInfo struct {
 }
 
 func (a *FieldInfo) HasFieldNameInStruct() bool {
-	return a.FieldName != ""
+	return a.FieldName != "" && a.FieldName != "_"
+}
+
+func (a *FieldInfo) HasName() bool {
+	return a.Name != "" && a.Name != "_"
 }
 
 func (a *FieldInfo) String() string {

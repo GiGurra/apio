@@ -168,8 +168,8 @@ func GetParameters(api apio.EndpointBase) []Parameter {
 
 	for _, field := range api.GetInputHeaderInfo().Fields {
 
-		if field.LKName == "content-type" {
-			continue // OpenAPI 3 spec doesn't permit this here
+		if field.LKName == "content-type" || !field.HasName() {
+			continue
 		}
 
 		result = append(result, Parameter{
@@ -184,6 +184,11 @@ func GetParameters(api apio.EndpointBase) []Parameter {
 	}
 
 	for _, field := range api.GetInputPathInfo().Fields {
+
+		if !field.HasName() {
+			continue
+		}
+
 		result = append(result, Parameter{
 			Name:        field.Name,
 			In:          "path",
@@ -196,6 +201,11 @@ func GetParameters(api apio.EndpointBase) []Parameter {
 	}
 
 	for _, field := range api.GetInputQueryInfo().Fields {
+
+		if !field.HasName() {
+			continue
+		}
+
 		result = append(result, Parameter{
 			Name:        field.Name,
 			In:          "query",
@@ -293,6 +303,9 @@ func GetComponentsOfStruct(structInfo apio.StructInfo) map[string]any {
 		required := make([]string, 0)
 
 		for _, field := range structInfo.Fields {
+			if !field.HasFieldNameInStruct() {
+				continue
+			}
 			props[field.Name] = goTypeToOpenapiSchemaRef(field.ValueType)
 			if field.IsRequired() {
 				required = append(required, field.Name)
