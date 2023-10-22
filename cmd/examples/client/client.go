@@ -20,19 +20,13 @@ func main() {
 	}
 
 	input1 := NewInput(
-		user_setting.Headers{
-			Yo:          "yo",
-			ContentType: "application/json",
-		},
+		Empty, // no headers in this get call
 		user_setting.PathById{
 			User:       123,
 			SettingCat: "cat",
 			SettingId:  "id",
 		},
-		user_setting.Query{
-			Foo: ptr("foo"),
-			Bar: 123,
-		},
+		Empty, // no query in this get call
 		Empty, // no body in this get call
 	)
 
@@ -44,14 +38,14 @@ func main() {
 	fmt.Printf("res: %+v\n", res1)
 
 	input2 := NewInput(
-		user_setting.Headers{
-			Yo:          "yo",
-			ContentType: "application/json",
-		},
+		Empty, // no headers in this get call
 		user_setting.PathAll{
 			User: 123,
 		},
-		Empty, // no query in this get call
+		user_setting.Query{
+			Foo: ptr("foo"),
+			Bar: 123,
+		},
 		Empty, // no body in this get call
 	)
 

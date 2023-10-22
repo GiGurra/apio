@@ -48,7 +48,7 @@ type RespHeaders struct {
 }
 
 var GetAll = Endpoint[
-	EndpointInput[Headers, PathAll, X, X],
+	EndpointInput[X, PathAll, Query, X],
 	EndpointOutput[RespHeaders, []Body],
 ]{
 	Method:      http.MethodGet,
@@ -59,7 +59,7 @@ var GetAll = Endpoint[
 }
 
 var GetById = Endpoint[
-	EndpointInput[Headers, PathById, Query, X],
+	EndpointInput[X, PathById, X, X],
 	EndpointOutput[RespHeaders, Body],
 ]{
 	Method:      http.MethodGet,
@@ -70,8 +70,8 @@ var GetById = Endpoint[
 }
 
 var PutById = Endpoint[
-	EndpointInput[X, PathById, X, Body],
-	EndpointOutput[RespHeaders, X],
+	EndpointInput[Headers, PathById, X, Body],
+	EndpointOutput[X, X],
 ]{
 	Method:      http.MethodPut,
 	ID:          "putUserSetting",

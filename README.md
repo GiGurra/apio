@@ -33,13 +33,26 @@ import (
 	"net/http"
 )
 
-// Path represents "/users/:user/settings/:settingCat/:settingId"
-type Path struct {
+type PathAll struct {
+	_    any `path:"/users"`
+	User int
+	_    any `path:"/settings"`
+}
+
+// PathById represents "/users/:user/settings/:settingCat/:settingId"
+type PathById struct {
 	_          any `path:"/users"`
 	User       int
 	_          any `path:"/settings"`
 	SettingCat string
 	SettingId  string
+}
+
+type PathByCat struct {
+	_          any `path:"/users"`
+	User       int
+	_          any `path:"/settings"`
+	SettingCat string
 }
 
 type Query struct {
@@ -62,9 +75,20 @@ type RespHeaders struct {
 	ContentType string `name:"Content-Type"`
 }
 
-var Get = Endpoint[
-	EndpointInput[Headers, Path, Query, X],
-	EndpointOutput[X, Body],
+var GetAll = Endpoint[
+	EndpointInput[X, PathAll, Query, X],
+	EndpointOutput[RespHeaders, []Body],
+]{
+	Method:      http.MethodGet,
+	ID:          "getUserSettings",
+	Summary:     "Get all user setting",
+	Description: "This operation retrieves all user settings",
+	Tags:        []string{"Users"},
+}
+
+var GetById = Endpoint[
+	EndpointInput[X, PathById, X, X],
+	EndpointOutput[RespHeaders, Body],
 ]{
 	Method:      http.MethodGet,
 	ID:          "getUserSetting",
@@ -73,9 +97,9 @@ var Get = Endpoint[
 	Tags:        []string{"Users"},
 }
 
-var Put = Endpoint[
-	EndpointInput[X, Path, X, Body],
-	EndpointOutput[RespHeaders, X],
+var PutById = Endpoint[
+	EndpointInput[Headers, PathById, X, Body],
+	EndpointOutput[X, X],
 ]{
 	Method:      http.MethodPut,
 	ID:          "putUserSetting",
@@ -108,55 +132,73 @@ func UserSettingEndpoints() []EndpointBase {
 
 	return []EndpointBase{
 
-		user_setting.Get.
+		user_setting.GetAll.
 			WithHandler(func(
-				input EndpointInput[user_setting.Headers, user_setting.Path, user_setting.Query, X],
-			) (EndpointOutput[X, user_setting.Body], error) {
+				input EndpointInput[X, user_setting.PathAll, user_setting.Query, X],
+			) (EndpointOutput[user_setting.RespHeaders, []user_setting.Body], error) {
 				fmt.Printf("invoked GET path with input: %+v\n", input)
-				return BodyResponse(user_setting.Body{
-					Value: "testValue",
-					Type:  fmt.Sprintf("input=%+v", input),
-				}), nil
+				return Response(
+					user_setting.RespHeaders{
+						ContentType: "application/json",
+					},
+					[]user_setting.Body{{
+						Value: "testValue",
+						Type:  fmt.Sprintf("input=%+v", input),
+					}},
+				), nil
 			}),
 
-		user_setting.Put.
+		user_setting.GetById.
 			WithHandler(func(
-				input EndpointInput[X, user_setting.Path, X, user_setting.Body],
-			) (EndpointOutput[user_setting.RespHeaders, X], error) {
+				input EndpointInput[X, user_setting.PathById, X, X],
+			) (EndpointOutput[user_setting.RespHeaders, user_setting.Body], error) {
+				fmt.Printf("invoked GET path with input: %+v\n", input)
+				return Response(
+					user_setting.RespHeaders{
+						ContentType: "application/json",
+					},
+					user_setting.Body{
+						Value: "testValue",
+						Type:  fmt.Sprintf("input=%+v", input),
+					},
+				), nil
+			}),
+
+		user_setting.PutById.
+			WithHandler(func(
+				input EndpointInput[user_setting.Headers, user_setting.PathById, X, user_setting.Body],
+			) (EndpointOutput[X, X], error) {
 				fmt.Printf("invoked PUT path with input: %+v\n", input)
-				return HeadersResponse(user_setting.RespHeaders{
-					ContentType: "application/json",
-				}), nil
+				return EmptyResponse(), nil
 			}),
 	}
 }
 
 func main() {
-	var testApi = Api{
-		Name: "My test API",
+	testApi := Api{
+		Name:        "My test API",
+		Description: "This is a test API.",
+		Version:     "1.0.0",
 		Servers: []Server{{
-			Scheme:   "https",
-			Host:     "api.example.com",
-			Port:     443,
-			BasePath: "/api/v1",
-			HttpVer:  "1.1",
+			Name:        "My test server",
+			Description: "My test server description",
+			Scheme:      "https",
+			Host:        "api.example.com",
+			Port:        443,
+			BasePath:    "/api/v1",
+			HttpVer:     "1.1",
 		}},
 		IntBasePath: "/api/v1",
 	}.WithEndpoints(
 		UserSettingEndpoints()...,
-	).Validate()
+	).Validate(true)
 
 	echoServer := echo.New()
 
-	// You can use whatever router/server you want, I just happened to use Echo here.
-	// apio comes with a helper function to install the endpoints on an Echo server,
-	// but you can also do this manually/add your own integration if you want to.
-	// see https://github.com/GiGurra/apio/blob/main/pkg/apio/apio_echo.go
 	EchoInstall(echoServer, &testApi)
 
 	_ = echoServer.Start(":8080")
 }
-
 
 ```
 
@@ -190,15 +232,28 @@ func main() {
 		HttpVer:  "1.1",
 	}
 
-	input := NewInput(
-		user_setting.Headers{
-			Yo:          "yo",
-			ContentType: "application/json",
-		},
-		user_setting.Path{
+	input1 := NewInput(
+		Empty, // no headers in this get call
+		user_setting.PathById{
 			User:       123,
 			SettingCat: "cat",
 			SettingId:  "id",
+		},
+		Empty, // no query in this get call
+		Empty, // no body in this get call
+	)
+
+	res1, err1 := user_setting.GetById.RPC(server, input1, DefaultOpts())
+	if err1 != nil {
+		panic(fmt.Sprintf("failed to call RPC GET endpoint: %v", err1))
+	}
+
+	fmt.Printf("res: %+v\n", res1)
+
+	input2 := NewInput(
+		Empty, // no headers in this get call
+		user_setting.PathAll{
+			User: 123,
 		},
 		user_setting.Query{
 			Foo: ptr("foo"),
@@ -207,12 +262,12 @@ func main() {
 		Empty, // no body in this get call
 	)
 
-	res, err := user_setting.Get.RPC(server, input, DefaultOpts())
-	if err != nil {
-		panic(fmt.Sprintf("failed to call RPC GET endpoint: %v", err))
+	res2, err2 := user_setting.GetAll.RPC(server, input2, DefaultOpts())
+	if err2 != nil {
+		panic(fmt.Sprintf("failed to call RPC GET all endpoint: %v", err1))
 	}
 
-	fmt.Printf("res: %+v\n", res)
+	fmt.Printf("res: %+v\n", res2)
 }
 
 ```
