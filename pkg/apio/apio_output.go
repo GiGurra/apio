@@ -82,13 +82,13 @@ func (e EndpointOutput[HeadersType, BodyType]) SetAll(hdrs map[string][]string, 
 func (e EndpointOutput[HeadersType, BodyType]) SetHeaders(hdrs map[string][]string) (EndpointOutputBase, error) {
 
 	// Check that it is a struct
-	stuctInfo, err := GetStructInfo(e.Headers)
+	structInfo, err := GetStructInfo(e.Headers)
 	if err != nil {
 		panic(fmt.Errorf("failed to analyze headers struct: %w", err))
 	}
 
 	requiredNotSet := make(map[string]bool)
-	for _, field := range stuctInfo.Fields {
+	for _, field := range structInfo.Fields {
 		if field.IsRequired() {
 			requiredNotSet[field.LKName] = true
 		}
@@ -98,7 +98,7 @@ func (e EndpointOutput[HeadersType, BodyType]) SetHeaders(hdrs map[string][]stri
 	for k, vs := range hdrs {
 		for _, v := range vs {
 			lkName := strings.ToLower(k)
-			field, exists := stuctInfo.FieldsByLKName[lkName]
+			field, exists := structInfo.FieldsByLKName[lkName]
 			if !exists {
 				continue // ignore extra headers
 			}
