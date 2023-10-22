@@ -46,13 +46,13 @@ type Query struct {
 }
 
 type Body struct {
-	Value any     `json:"value"`
+	Value string  `json:"value"`
 	Type  string  `json:"type"`
 	Opt   *string `json:"opt"`
 }
 
 type Headers struct {
-	Yo          any
+	Yo          string
 	ContentType string `name:"Content-Type"`
 }
 
@@ -63,12 +63,24 @@ type RespHeaders struct {
 var Get = Endpoint[
 	EndpointInput[Headers, Path, Query, X],
 	EndpointOutput[X, Body],
-]{Method: http.MethodGet}
+]{
+	Method:      http.MethodGet,
+	ID:          "getUserSetting",
+	Summary:     "Get a user setting",
+	Description: "This operation retrieves a user setting",
+	Tags:        []string{"Users"},
+}
 
 var Put = Endpoint[
 	EndpointInput[X, Path, X, Body],
 	EndpointOutput[RespHeaders, X],
-]{Method: http.MethodPut}
+]{
+	Method:      http.MethodPut,
+	ID:          "putUserSetting",
+	Summary:     "Replace a user setting",
+	Description: "This operation replaces a user setting",
+	Tags:        []string{"Users"},
+}
 
 ```
 
@@ -241,5 +253,5 @@ func main() {
 
 ```
 
-![img.png](img.png)
+![img_1.png](img_1.png)
 
