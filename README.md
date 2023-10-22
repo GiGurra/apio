@@ -153,7 +153,7 @@ func main() {
 
 ### Client
 
-Lastly, we can for example make RPC calls to the endpoints like this:
+To call this API using the spec, we can do something like this:
 
 ```go
 package main
