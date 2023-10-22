@@ -8,7 +8,6 @@ import (
 )
 
 type OutputPayload struct {
-	Code    int
 	Headers map[string][]string
 	Body    []byte
 }
@@ -19,8 +18,9 @@ type EndpointOutputBase interface {
 	ToPayload() (OutputPayload, error)
 	validateBodyType()
 	validateHeadersType()
-	SetBody(jsonBytes []byte) (any, error)
-	SetHeaders(hdrs map[string][]string) (any, error)
+	SetBody(jsonBytes []byte) (EndpointOutputBase, error)
+	SetHeaders(hdrs map[string][]string) (EndpointOutputBase, error)
+	SetAll(hdrs map[string][]string, jsonBodyBytes []byte) (EndpointOutputBase, error)
 	GetBodyInfo() StructInfo
 	GetDescription() string
 	OkCode() int
@@ -50,7 +50,7 @@ func (e EndpointOutput[HeadersType, BodyType]) OkCode() int {
 	}
 }
 
-func (e EndpointOutput[HeadersType, BodyType]) SetBody(jsonBytes []byte) (any, error) {
+func (e EndpointOutput[HeadersType, BodyType]) SetBody(jsonBytes []byte) (EndpointOutputBase, error) {
 
 	// if target has no fields, just return
 	if reflect.TypeOf(e.Body).NumField() == 0 {
@@ -66,7 +66,19 @@ func (e EndpointOutput[HeadersType, BodyType]) SetBody(jsonBytes []byte) (any, e
 	return e, nil
 }
 
-func (e EndpointOutput[HeadersType, BodyType]) SetHeaders(hdrs map[string][]string) (any, error) {
+func (e EndpointOutput[HeadersType, BodyType]) SetAll(hdrs map[string][]string, jsonBodyBytes []byte) (EndpointOutputBase, error) {
+	res, err := e.SetHeaders(hdrs)
+	if err != nil {
+		return res, fmt.Errorf("failed to set headers: %w", err)
+	}
+	res, err = res.SetBody(jsonBodyBytes)
+	if err != nil {
+		return res, fmt.Errorf("failed to set body: %w", err)
+	}
+	return res, nil
+}
+
+func (e EndpointOutput[HeadersType, BodyType]) SetHeaders(hdrs map[string][]string) (EndpointOutputBase, error) {
 
 	// Check that it is a struct
 	headersType := reflect.TypeOf(e.Headers)
