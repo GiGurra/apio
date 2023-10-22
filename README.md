@@ -162,7 +162,11 @@ func main() {
 
 ### Client
 
-To call this API using the spec, we can do something like this:
+Similar to how we created the server, we can use the api endpoint specifications to make requests.
+`apio` has a built-in implementation using the go standard library, but you could also implement your own.
+All the data required is public. See the default implementation for reference.
+
+Here is an example using the built-in functionality:
 
 ```go
 package main
