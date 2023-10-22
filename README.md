@@ -327,4 +327,5 @@ func main() {
 
 * [ ] Add support for struct composition
 * [ ] Add support for other content types than JSON
+* [ ] Reverse code generation, OpenAPI -> Go
 
