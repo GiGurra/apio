@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 )
 
 type OutputPayload struct {
@@ -81,43 +82,48 @@ func (e EndpointOutput[HeadersType, BodyType]) SetAll(hdrs map[string][]string, 
 func (e EndpointOutput[HeadersType, BodyType]) SetHeaders(hdrs map[string][]string) (EndpointOutputBase, error) {
 
 	// Check that it is a struct
-	headersType := reflect.TypeOf(e.Headers)
-	if headersType.Kind() != reflect.Struct {
-		panic(fmt.Errorf("expected output headers to be a struct, got %s", headersType.Kind()))
+	stuctInfo, err := GetStructInfo(e.Headers)
+	if err != nil {
+		panic(fmt.Errorf("failed to analyze headers struct: %w", err))
 	}
 
-	// TODO: Use cached & fast description of headers struct here, instead of reflecting every time
+	requiredNotSet := make(map[string]bool)
+	for _, field := range stuctInfo.Fields {
+		if field.IsRequired() {
+			requiredNotSet[field.LKName] = true
+		}
+	}
+
 	// Check that all headers are present
 	for k, vs := range hdrs {
 		for _, v := range vs {
-			for i := 0; i < headersType.NumField(); i++ {
-				field := headersType.Field(i)
-				if field.Name != "_" {
-					name := field.Name
-					if nameOvrd, ok := field.Tag.Lookup("name"); ok {
-						name = nameOvrd
-					}
-					if name == k {
-						parser, err := getStringParsePtrFn(field.Type)
-						if err != nil {
-							return e, fmt.Errorf("failed to get parser for header '%s': %w", k, err)
-						}
-						newValuePtr, err := parser(v)
-						if err != nil {
-							return e, fmt.Errorf("failed to parse header '%s': %w", k, err)
-						}
-						// assign the value to the struct field
-						// Check if it is a pointer first, in which case we need to set it using an address
-						if reflect.ValueOf(e.Headers).Field(i).Kind() == reflect.Ptr {
-							reflect.ValueOf(&e.Headers).Elem().Field(i).Set(reflect.ValueOf(newValuePtr))
-						} else {
-							reflect.ValueOf(&e.Headers).Elem().Field(i).Set(reflect.ValueOf(newValuePtr).Elem())
-						}
-						break
-					}
-				}
+			lkName := strings.ToLower(k)
+			field, exists := stuctInfo.FieldsByLKName[lkName]
+			if !exists {
+				continue // ignore extra headers
 			}
+
+			parser, err := getStringParsePtrFn(field.Type)
+			if err != nil {
+				return e, fmt.Errorf("failed to get parser for header '%s': %w", k, err)
+			}
+			newValuePtr, err := parser(v)
+			if err != nil {
+				return e, fmt.Errorf("failed to parse header '%s': %w", k, err)
+			}
+			// assign the value to the struct field
+			// Check if it is a pointer first, in which case we need to set it using an address
+			if reflect.ValueOf(e.Headers).Field(field.Index).Kind() == reflect.Ptr {
+				reflect.ValueOf(&e.Headers).Elem().Field(field.Index).Set(reflect.ValueOf(newValuePtr))
+			} else {
+				reflect.ValueOf(&e.Headers).Elem().Field(field.Index).Set(reflect.ValueOf(newValuePtr).Elem())
+			}
+			delete(requiredNotSet, lkName)
 		}
+	}
+
+	if len(requiredNotSet) > 0 {
+		return e, fmt.Errorf("required headers not set: %v", requiredNotSet)
 	}
 
 	return e, nil

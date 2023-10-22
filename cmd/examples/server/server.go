@@ -16,12 +16,17 @@ func UserSettingEndpoints() []EndpointBase {
 		user_setting.Get.
 			WithHandler(func(
 				input EndpointInput[user_setting.Headers, user_setting.Path, user_setting.Query, X],
-			) (EndpointOutput[X, user_setting.Body], error) {
+			) (EndpointOutput[user_setting.RespHeaders, user_setting.Body], error) {
 				fmt.Printf("invoked GET path with input: %+v\n", input)
-				return BodyResponse(user_setting.Body{
-					Value: "testValue",
-					Type:  fmt.Sprintf("input=%+v", input),
-				}), nil
+				return Response(
+					user_setting.RespHeaders{
+						ContentType: "application/json",
+					},
+					user_setting.Body{
+						Value: "testValue",
+						Type:  fmt.Sprintf("input=%+v", input),
+					},
+				), nil
 			}),
 
 		user_setting.Put.

@@ -36,7 +36,7 @@ type RespHeaders struct {
 
 var Get = Endpoint[
 	EndpointInput[Headers, Path, Query, X],
-	EndpointOutput[X, Body],
+	EndpointOutput[RespHeaders, Body],
 ]{
 	Method:      http.MethodGet,
 	ID:          "getUserSetting",
