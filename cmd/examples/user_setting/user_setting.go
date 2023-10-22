@@ -5,7 +5,13 @@ import (
 	"net/http"
 )
 
-// PathWithId represents "/users/:user/settings/:settingCat/:settingId"
+type PathAll struct {
+	_    any `path:"/users"`
+	User int
+	_    any `path:"/settings"`
+}
+
+// PathById represents "/users/:user/settings/:settingCat/:settingId"
 type PathById struct {
 	_          any `path:"/users"`
 	User       int
@@ -19,12 +25,6 @@ type PathByCat struct {
 	User       int
 	_          any `path:"/settings"`
 	SettingCat string
-}
-
-type PathAll struct {
-	_    any `path:"/users"`
-	User int
-	_    any `path:"/settings"`
 }
 
 type Query struct {
