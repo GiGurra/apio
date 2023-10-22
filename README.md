@@ -13,9 +13,9 @@ It lets you:
 * Define your API with declarative Go code & types
 * Get direct access to type safe client and server APIs in go.
 * Validate your API definition at application startup.
-* Generate an OpenAPI/swagger spec from the API definition.
+* Optionally generate an OpenAPI/swagger spec from the API definition.
 
-Without any Go code generation (ofc, we generate non-go code, namely the openapi spec).
+Without any required Go code generation.
 
 ## Example
 
