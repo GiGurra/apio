@@ -163,7 +163,7 @@ func main() {
 ### Client
 
 Similar to how we created the server, we can use the api endpoint specifications to make requests.
-`apio` has a built-in implementation using the go standard library, but you could also implement your own.
+`apio` has a built-in implementation using the go standard library http client, but you could also use your own.
 All the data required is public. See the default implementation for reference.
 
 Here is an example using the built-in functionality:
@@ -267,7 +267,6 @@ func main() {
 ```
 
 ![img_1.png](img_1.png)
-
 
 ## TODO
 
