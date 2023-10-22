@@ -73,7 +73,7 @@ func ToOpenApi3(api apio.Api) OpenApi {
 		},
 		Servers:    servers,
 		Paths:      GetPaths(api),
-		Components: GetComponents(api),
+		Components: GetComponentsOfApi(api),
 	}
 }
 
@@ -110,9 +110,7 @@ func goTypeToOpenapiSchemaRef(t reflect.Type) map[string]any {
 			panic(fmt.Errorf("failed to analyze struct: %v", err))
 		}
 		return map[string]any{
-			"schema": map[string]any{
-				"$ref": "#/components/schemas/" + schemaNameOf(structInfo),
-			},
+			"$ref": "#/components/schemas/" + schemaNameOf(structInfo),
 		}
 	default:
 		return map[string]any{
@@ -271,10 +269,6 @@ func GetPaths(api apio.Api) map[string]any {
 	return result
 }
 
-func GetComponentsOfApi(api apio.Api) map[string]any {
-
-}
-
 func GetComponentsOfType(t reflect.Type) map[string]any {
 	switch t.Kind() {
 	case reflect.Struct:
@@ -282,7 +276,11 @@ func GetComponentsOfType(t reflect.Type) map[string]any {
 		if err != nil {
 			panic(fmt.Errorf("failed to analyze struct: %v", err))
 		}
-
+		return GetComponentsOfStruct(structInfo)
+	case reflect.Slice:
+		return GetComponentsOfType(t.Elem())
+	default:
+		return make(map[string]any)
 	}
 }
 
@@ -312,7 +310,7 @@ func GetComponentsOfStruct(structInfo apio.AnalyzedStruct) map[string]any {
 	return schemas
 }
 
-func GetComponentsOfType(api apio.Api) map[string]any {
+func GetComponentsOfApi(api apio.Api) map[string]any {
 
 	schemas := make(map[string]any)
 	for _, e := range api.Endpoints {
@@ -321,22 +319,9 @@ func GetComponentsOfType(api apio.Api) map[string]any {
 			e.GetBodyInputInfo(),
 		}
 		for _, structInfo := range bodyInfos {
-			if structInfo.HasContent() {
-				props := make(map[string]any)
-				required := make([]string, 0)
-
-				for _, field := range structInfo.Fields {
-					props[field.Name] = goTypeToOpenapiSchemaRef(field.ValueType)
-					if field.IsRequired() {
-						required = append(required, field.Name)
-					}
-				}
-
-				schemas[schemaNameOf(structInfo)] = Schema{
-					Type:       "object",
-					Properties: props,
-					Required:   required,
-				}
+			inner := GetComponentsOfStruct(structInfo)
+			for k, v := range inner {
+				schemas[k] = v
 			}
 		}
 	}
