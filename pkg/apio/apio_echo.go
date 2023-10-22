@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+// EchoInstall installs the api to the echo server. This is an example implementation.
+// You can use this as a template for your own server implementation if you like.
 func EchoInstall(echoServer *echo.Echo, api *Api) {
 
 	slog.Info(fmt.Sprintf("installing api '%s' to echo server:", api.Name))
