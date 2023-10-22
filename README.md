@@ -13,7 +13,7 @@ It lets you:
 * Define your API in a type-safe way with declarative Go code
 * Get access to type safe client and server APIs in go (no code generation).
 * Generate an OpenAPI/swagger spec from the API definition.
-* Zero go code generation
+* Do this with zero go code generation
 
 ## Example
 
