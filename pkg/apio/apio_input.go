@@ -23,9 +23,11 @@ func (p InputPayload) QueryString() string {
 	}
 	var result strings.Builder
 	result.WriteString("?")
-	for k, v := range p.Query {
-		urlEncodedValue := url.QueryEscape(v[0])
-		result.WriteString(k + "=" + urlEncodedValue + "&")
+	for k, vs := range p.Query {
+		for _, v := range vs {
+			urlEncodedValue := url.QueryEscape(v)
+			result.WriteString(k + "=" + urlEncodedValue + "&")
+		}
 	}
 	return strings.TrimSuffix(result.String(), "&")
 }
