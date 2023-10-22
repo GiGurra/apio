@@ -42,6 +42,7 @@ var Get = Endpoint[
 	ID:          "getUserSetting",
 	Summary:     "Get a user setting",
 	Description: "This operation retrieves a user setting",
+	Tags:        []string{"Users"},
 }
 
 var Put = Endpoint[
@@ -52,4 +53,5 @@ var Put = Endpoint[
 	ID:          "putUserSetting",
 	Summary:     "Replace a user setting",
 	Description: "This operation replaces a user setting",
+	Tags:        []string{"Users"},
 }
