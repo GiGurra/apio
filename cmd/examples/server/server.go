@@ -74,7 +74,7 @@ func main() {
 		IntBasePath: "/api/v1",
 	}.WithEndpoints(
 		UserSettingEndpoints()...,
-	).Validate()
+	).Validate(true)
 
 	openApi3 := openapi3.ToOpenApi3(testApi)
 	openApi3Json, err := json.MarshalIndent(openApi3, "", "  ")

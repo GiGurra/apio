@@ -65,7 +65,7 @@ func TestBodyIsSlice(t *testing.T) {
 		IntBasePath: "/api/v1",
 	}.WithEndpoints(
 		endpoint,
-	).Validate()
+	).Validate(false)
 
 	openApi3Str, err := json.MarshalIndent(ToOpenApi3(testApi), "", "  ")
 	if err != nil {

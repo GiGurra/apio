@@ -36,9 +36,9 @@ func (a Api) WithEndpoints(endpoint ...EndpointBase) Api {
 	return a
 }
 
-func (a Api) Validate() Api {
+func (a Api) Validate(isServer bool) Api {
 	for _, e := range a.Endpoints {
-		e.validate()
+		e.validate(isServer)
 	}
 	return a
 }
@@ -70,7 +70,7 @@ type EndpointBase interface {
 	GetSummary() string
 	GetDescription() string
 	Handle(payload InputPayload) (EndpointOutputBase, error)
-	validate()
+	validate(isServer bool)
 	GetInputHeaderInfo() StructInfo
 	GetInputPathInfo() StructInfo
 	GetInputQueryInfo() StructInfo
@@ -327,7 +327,15 @@ func (e Endpoint[Input, Output]) GetQueryPattern() string {
 	return e.getQueryBindings().FlatPath
 }
 
-func (e Endpoint[Input, Output]) validate() {
+func (e Endpoint[Input, Output]) validate(isServer bool) {
+	if e.Method == "" {
+		panic("method is empty for endpoint " + e.GetId())
+	}
+	if isServer {
+		if e.Handler == nil {
+			panic("handler is nil for endpoint " + e.GetId())
+		}
+	}
 	e.getHeaderBindings() // panics if invalid
 	e.getPathBindings()   // panics if invalid
 	e.getQueryBindings()  // panics if invalid

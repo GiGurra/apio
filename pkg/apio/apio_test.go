@@ -87,7 +87,7 @@ var testApi = Api{
 	IntBasePath: "/api/v1",
 }.WithEndpoints(
 	UserSettingEndpoints()...,
-).Validate()
+).Validate(false)
 
 func TestGetUserSetting(t *testing.T) {
 
