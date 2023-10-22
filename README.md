@@ -11,7 +11,7 @@ This library asks the question:
 It lets you:
 
 * Define your API with declarative Go code & types
-* Get access to type safe client and server APIs in go (no code generation).
+* Get direct access to type safe client and server APIs in go (no code generation).
 * Generate an OpenAPI/swagger spec from the API definition.
 * Do this with zero go code generation
 
