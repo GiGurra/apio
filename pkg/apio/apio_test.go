@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/go-cmp/cmp"
+	"log/slog"
 	"net/http"
 	"testing"
 )
@@ -49,7 +50,7 @@ func UserSettingEndpoints() []EndpointBase {
 			Handler: func(
 				input EndpointInput[UserSettingHeaders, UserSettingPath, UserSettingQuery, X],
 			) (EndpointOutput[X, UserSetting], error) {
-				fmt.Printf("invoked GET path with input: %+v\n", input)
+				slog.Info(fmt.Sprintf("invoked GET path with input: %+v", input))
 				return BodyResponse(UserSetting{
 					Value: "testValue",
 					Type:  fmt.Sprintf("input=%+v", input),
@@ -65,7 +66,7 @@ func UserSettingEndpoints() []EndpointBase {
 			Handler: func(
 				input EndpointInput[X, UserSettingPath, X, UserSetting],
 			) (EndpointOutput[OutputHeaders, X], error) {
-				fmt.Printf("invoked PUT path with input: %+v\n", input)
+				slog.Info(fmt.Sprintf("invoked PUT path with input: %+v", input))
 				return HeadersResponse(OutputHeaders{
 					ContentType: "application/json",
 				}), nil

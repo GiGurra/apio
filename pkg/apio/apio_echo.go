@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 )
 
 func EchoInstall(echoServer *echo.Echo, api *Api) {
 
-	fmt.Printf("installing api '%s' to echo server: \n", api.Name)
-	fmt.Printf(" * servers: \n")
+	slog.Info(fmt.Sprintf("installing api '%s' to echo server:", api.Name))
+	slog.Info(fmt.Sprintf(" * servers: "))
 	for _, s := range api.Servers {
-		fmt.Printf("   * %+v: \n", s)
+		slog.Info(fmt.Sprintf("   * %+v", s))
 	}
 
 	for i := range api.Endpoints {
@@ -31,7 +32,7 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 
 		pathWithQueryParams := path + endpoint.GetQueryPattern()
 
-		fmt.Printf(" * attaching endpoint: %s %s\n", endpoint.GetMethod(), pathWithQueryParams)
+		slog.Info(fmt.Sprintf(" * attaching endpoint: %s %s", endpoint.GetMethod(), pathWithQueryParams))
 		echoServer.Add(endpoint.GetMethod(), path, func(ctx echo.Context) error {
 
 			body := ctx.Request().Body
@@ -39,7 +40,7 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 				_, _ = io.ReadAll(body)
 				err := body.Close()
 				if err != nil {
-					fmt.Printf("error closing body: %v", err)
+					slog.Error(fmt.Sprintf("error closing body: %v", err))
 				}
 			}(body)
 
@@ -76,17 +77,21 @@ func EchoInstall(echoServer *echo.Echo, api *Api) {
 			if err != nil {
 				var errResp *ErrResp
 				if errors.As(err, &errResp) {
-					fmt.Printf("error response: %v\n", errResp)
+					if errResp.Status/100 == 4 {
+						slog.Warn(fmt.Sprintf("error response: %v", errResp))
+					} else {
+						slog.Error(fmt.Sprintf("error response: %v", errResp))
+					}
 					return ctx.String(errResp.Status, errResp.ClMsg)
 				} else {
-					fmt.Printf("error: %v\n", err)
+					slog.Error(fmt.Sprintf("error: %v", err))
 					return ctx.String(500, fmt.Sprintf("internal error, see server logs"))
 				}
 			}
 
 			outputBodyBytes, err := result.GetBody()
 			if err != nil {
-				fmt.Printf("error getting body: %v\n", err)
+				slog.Error(fmt.Sprintf("error getting body: %v", err))
 				return ctx.String(500, fmt.Sprintf("internal error, see server logs"))
 			}
 
