@@ -220,6 +220,32 @@ func GetParameters(api apio.EndpointBase) []Parameter {
 	return result
 }
 
+func contentOfBodyInfo(bodyInfo apio.StructInfo) map[string]any {
+	if !bodyInfo.HasContent() {
+		return make(map[string]any)
+	}
+	if bodyInfo.IsSlice {
+		return map[string]any{
+			"application/json": map[string]any{
+				"schema": map[string]any{
+					"type": "array",
+					"items": map[string]any{
+						"$ref": "#/components/schemas/" + schemaNameOf(bodyInfo),
+					},
+				},
+			},
+		}
+	} else {
+		return map[string]any{
+			"application/json": map[string]any{
+				"schema": map[string]any{
+					"$ref": "#/components/schemas/" + schemaNameOf(bodyInfo),
+				},
+			},
+		}
+	}
+}
+
 func GetPaths(api apio.Api) map[string]any {
 
 	result := make(map[string]any)
@@ -234,16 +260,7 @@ func GetPaths(api apio.Api) map[string]any {
 		methods := result[path].(map[string]any)
 
 		outputBodyInfo := e.GetBodyOutputInfo()
-		outputContent := make(map[string]any)
-		if outputBodyInfo.HasContent() {
-			outputContent = map[string]any{
-				"application/json": map[string]any{
-					"schema": map[string]any{
-						"$ref": "#/components/schemas/" + schemaNameOf(outputBodyInfo),
-					},
-				},
-			}
-		}
+		outputContent := contentOfBodyInfo(outputBodyInfo)
 
 		inputBodyInfo := e.GetBodyInputInfo()
 
@@ -263,13 +280,7 @@ func GetPaths(api apio.Api) map[string]any {
 				if inputBodyInfo.HasContent() {
 					return &RequestBody{
 						Description: e.GetInput().GetDescription(),
-						Content: map[string]any{
-							"application/json": map[string]any{
-								"schema": map[string]any{
-									"$ref": "#/components/schemas/" + schemaNameOf(inputBodyInfo),
-								},
-							},
-						},
+						Content:     contentOfBodyInfo(inputBodyInfo),
 					}
 				} else {
 					return nil

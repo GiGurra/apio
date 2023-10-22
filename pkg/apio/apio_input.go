@@ -432,8 +432,8 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) calcQueryBind
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) validateBodyType() {
 	bodyT := reflect.TypeOf(e.Body)
-	if bodyT.Kind() != reflect.Struct {
-		panic("BodyType must be a struct")
+	if bodyT.Kind() != reflect.Struct && bodyT.Kind() != reflect.Slice {
+		panic("BodyType must be a struct or slice")
 	}
 }
 

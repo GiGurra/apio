@@ -103,6 +103,7 @@ type StructInfo struct {
 	FieldsByFieldName map[string]FieldInfo
 	FieldsByName      map[string]FieldInfo
 	FieldsByLKName    map[string]FieldInfo // lower kebab case
+	IsSlice           bool
 }
 
 func (a *StructInfo) HasContent() bool {
@@ -169,6 +170,14 @@ func GetStructInfoOfType(tpe reflect.Type) (StructInfo, error) {
 
 	// Check that it is a struct
 	if tpe.Kind() != reflect.Struct {
+		if tpe.Kind() == reflect.Slice {
+			res, err := GetStructInfoOfType(tpe.Elem())
+			if err != nil {
+				return StructInfo{}, err
+			}
+			res.IsSlice = true
+			return res, nil
+		}
 		return StructInfo{}, fmt.Errorf("expected struct, got %v", tpe.Kind())
 	}
 

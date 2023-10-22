@@ -54,7 +54,8 @@ func (e EndpointOutput[HeadersType, BodyType]) OkCode() int {
 func (e EndpointOutput[HeadersType, BodyType]) SetBody(jsonBytes []byte) (EndpointOutputBase, error) {
 
 	// if target has no fields, just return
-	if reflect.TypeOf(e.Body).NumField() == 0 {
+	structInfo := e.GetBodyInfo()
+	if !structInfo.HasContent() {
 		return e, nil
 	}
 
@@ -181,8 +182,8 @@ func (e EndpointOutput[HeadersType, BodyType]) GetBody() ([]byte, error) {
 
 func (e EndpointOutput[HeadersType, BodyType]) validateBodyType() {
 	bodyT := reflect.TypeOf(e.Body)
-	if bodyT.Kind() != reflect.Struct {
-		panic("BodyType must be a struct")
+	if bodyT.Kind() != reflect.Struct && bodyT.Kind() != reflect.Slice {
+		panic("BodyType must be a struct or slice")
 	}
 }
 
