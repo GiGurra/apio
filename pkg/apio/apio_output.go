@@ -21,7 +21,7 @@ type EndpointOutputBase interface {
 	validateHeadersType()
 	SetBody(jsonBytes []byte) (any, error)
 	SetHeaders(hdrs map[string][]string) (any, error)
-	GetBodyInfo() AnalyzedStruct
+	GetBodyInfo() StructInfo
 	GetDescription() string
 	OkCode() int
 }
@@ -30,8 +30,8 @@ func (e EndpointOutput[HeadersType, BodyType]) GetDescription() string {
 	return e.Description
 }
 
-func (e EndpointOutput[HeadersType, BodyType]) GetBodyInfo() AnalyzedStruct {
-	info, err := AnalyzeStruct(e.Body)
+func (e EndpointOutput[HeadersType, BodyType]) GetBodyInfo() StructInfo {
+	info, err := GetStructInfo(e.Body)
 	if err != nil {
 		panic(fmt.Sprintf("failed to analyze struct: %v", err))
 	}
@@ -39,7 +39,7 @@ func (e EndpointOutput[HeadersType, BodyType]) GetBodyInfo() AnalyzedStruct {
 }
 
 func (e EndpointOutput[HeadersType, BodyType]) OkCode() int {
-	bodyInfo, err := AnalyzeStruct(e.Body)
+	bodyInfo, err := GetStructInfo(e.Body)
 	if err != nil {
 		panic(fmt.Errorf("failed to analyze struct: %w", err))
 	}
@@ -146,7 +146,7 @@ func (e EndpointOutput[HeadersType, BodyType]) GetHeaders() map[string][]string 
 }
 
 func (e EndpointOutput[HeadersType, BodyType]) GetBody() ([]byte, error) {
-	structInfo, err := AnalyzeStruct(e.Body)
+	structInfo, err := GetStructInfo(e.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to analyze struct: %w", err)
 	}

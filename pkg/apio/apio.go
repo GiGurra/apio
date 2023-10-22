@@ -71,11 +71,11 @@ type EndpointBase interface {
 	GetDescription() string
 	Handle(payload InputPayload) (EndpointOutputBase, error)
 	validate()
-	GetInputHeaderInfo() AnalyzedStruct
-	GetInputPathInfo() AnalyzedStruct
-	GetInputQueryInfo() AnalyzedStruct
-	GetBodyInputInfo() AnalyzedStruct
-	GetBodyOutputInfo() AnalyzedStruct
+	GetInputHeaderInfo() StructInfo
+	GetInputPathInfo() StructInfo
+	GetInputQueryInfo() StructInfo
+	GetBodyInputInfo() StructInfo
+	GetBodyOutputInfo() StructInfo
 	GetOutput() EndpointOutputBase
 	GetInput() EndpointInputBase
 	OkCode() int
@@ -124,27 +124,27 @@ func (e Endpoint[Input, Output]) GetId() string {
 	}
 }
 
-func (e Endpoint[Input, Output]) GetInputHeaderInfo() AnalyzedStruct {
+func (e Endpoint[Input, Output]) GetInputHeaderInfo() StructInfo {
 	var zero Input
 	return zero.GetHeaderInfo()
 }
 
-func (e Endpoint[Input, Output]) GetInputPathInfo() AnalyzedStruct {
+func (e Endpoint[Input, Output]) GetInputPathInfo() StructInfo {
 	var zero Input
 	return zero.GetPathInfo()
 }
 
-func (e Endpoint[Input, Output]) GetInputQueryInfo() AnalyzedStruct {
+func (e Endpoint[Input, Output]) GetInputQueryInfo() StructInfo {
 	var zero Input
 	return zero.GetQueryInfo()
 }
 
-func (e Endpoint[Input, Output]) GetBodyOutputInfo() AnalyzedStruct {
+func (e Endpoint[Input, Output]) GetBodyOutputInfo() StructInfo {
 	var zero Output
 	return zero.GetBodyInfo()
 }
 
-func (e Endpoint[Input, Output]) GetBodyInputInfo() AnalyzedStruct {
+func (e Endpoint[Input, Output]) GetBodyInputInfo() StructInfo {
 	var zero Input
 	return zero.GetBodyInfo()
 }

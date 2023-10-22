@@ -14,15 +14,15 @@ type TestStruct struct {
 
 func TestAnalyzeStruct(t *testing.T) {
 	instance := TestStruct{}
-	analyzed, err := AnalyzeStruct(instance)
+	analyzed, err := GetStructInfo(instance)
 	if err != nil {
 		t.Fatalf("AnalyzeStruct returned an error: %v", err)
 	}
 
-	expected := AnalyzedStruct{
+	expected := StructInfo{
 		Name: "TestStruct",
 		Pkg:  "github.com/GiGurra/apio/pkg/apio",
-		Fields: []AnalyzedField{
+		Fields: []FieldInfo{
 			{
 				Name:         "RequiredField",
 				FieldName:    "RequiredField",
@@ -58,7 +58,7 @@ func TestAnalyzeStruct(t *testing.T) {
 		expField := expected.Fields[i]
 		actField := analyzed.Fields[i]
 		if diff := cmp.Diff(expField.String(), actField.String()); diff != "" {
-			t.Fatalf("AnalyzedField mismatch:\n%s", diff)
+			t.Fatalf("FieldInfo mismatch:\n%s", diff)
 		}
 	}
 

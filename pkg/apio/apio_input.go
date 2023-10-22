@@ -46,10 +46,10 @@ type EndpointInputBase interface {
 		queryBindings QueryBindings,
 	) (any, error)
 	ToPayload() (InputPayload, error)
-	GetHeaderInfo() AnalyzedStruct
-	GetPathInfo() AnalyzedStruct
-	GetQueryInfo() AnalyzedStruct
-	GetBodyInfo() AnalyzedStruct
+	GetHeaderInfo() StructInfo
+	GetPathInfo() StructInfo
+	GetQueryInfo() StructInfo
+	GetBodyInfo() StructInfo
 	GetDescription() string
 }
 
@@ -57,32 +57,32 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetDescriptio
 	return e.Description
 }
 
-func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetBodyInfo() AnalyzedStruct {
-	info, err := AnalyzeStruct(e.Body)
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetBodyInfo() StructInfo {
+	info, err := GetStructInfo(e.Body)
 	if err != nil {
 		panic(fmt.Errorf("failed to analyze body: %w", err))
 	}
 	return info
 }
 
-func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetHeaderInfo() AnalyzedStruct {
-	info, err := AnalyzeStruct(e.Headers)
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetHeaderInfo() StructInfo {
+	info, err := GetStructInfo(e.Headers)
 	if err != nil {
 		panic(fmt.Errorf("failed to analyze headers: %w", err))
 	}
 	return info
 }
 
-func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPathInfo() AnalyzedStruct {
-	info, err := AnalyzeStruct(e.Path)
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetPathInfo() StructInfo {
+	info, err := GetStructInfo(e.Path)
 	if err != nil {
 		panic(fmt.Errorf("failed to analyze path: %w", err))
 	}
 	return info
 }
 
-func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetQueryInfo() AnalyzedStruct {
-	info, err := AnalyzeStruct(e.Query)
+func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) GetQueryInfo() StructInfo {
+	info, err := GetStructInfo(e.Query)
 	if err != nil {
 		panic(fmt.Errorf("failed to analyze query: %w", err))
 	}
@@ -110,9 +110,9 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (
 
 	// Serialize headers
 	headers := map[string][]string{}
-	headersInfo, err := AnalyzeStruct(e.Headers)
+	headersInfo, err := GetStructInfo(e.Headers)
 	if err != nil {
-		return InputPayload{}, fmt.Errorf("failed to analyze headers: %w", err)
+		return InputPayload{}, fmt.Errorf("failed to analyze headers struct: %w", err)
 	}
 	for _, field := range headersInfo.Fields {
 		if field.Name != "_" {
@@ -138,16 +138,16 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (
 	// serialize path
 	path := map[string]string{}
 	pathStr := ""
-	pathT := reflect.TypeOf(e.Path)
-	if pathT.Kind() != reflect.Struct {
-		return InputPayload{}, fmt.Errorf("PathType must be a struct, this should have been caught in initial validation step")
+	pathInfo, err := GetStructInfo(e.Path)
+	if err != nil {
+		return InputPayload{}, fmt.Errorf("failed to analyze path struct: %w", err)
 	}
-	for i := 0; i < pathT.NumField(); i++ {
-		field := pathT.Field(i)
+	for i := 0; i < len(pathInfo.Fields); i++ {
+		field := pathInfo.Fields[i]
 		if field.Name == "_" {
 			// We won't bind this parameter, but it is still needed in the path
 			// Check if it has a tag called path
-			pathTag := field.Tag.Get("path")
+			pathTag := field.StructField.Tag.Get("path")
 			if pathTag == "" {
 				// Treat as wildcard
 				//path += "/*"
@@ -168,30 +168,26 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (
 
 	// Serialize query
 	query := map[string][]string{}
-	queryT := reflect.TypeOf(e.Query)
-	if queryT.Kind() != reflect.Struct {
-		return InputPayload{}, fmt.Errorf("QueryType must be a struct, this should have been caught in initial validation step")
+	queryInfo, err := GetStructInfo(e.Query)
+	if err != nil {
+		return InputPayload{}, fmt.Errorf("failed to analyze query struct: %w", err)
 	}
-	for i := 0; i < queryT.NumField(); i++ {
+	for i := 0; i < len(queryInfo.Fields); i++ {
 
 		// if the value is nil, move on
-		tpe := queryT.Field(i).Type
+		field := queryInfo.Fields[i]
+		tpe := field.Type
 		value := reflect.ValueOf(e.Query).Field(i)
 		if tpe.Kind() == reflect.Ptr && value.IsNil() {
 			continue
 		}
 
-		field := queryT.Field(i)
-		if field.Name != "_" {
-			name := field.Name
-			if nameOvrd, ok := field.Tag.Lookup("name"); ok {
-				name = nameOvrd
-			}
+		if field.Name != "_" && field.Name != "" {
 			valueSerialized, err := serializeUrlValue(value)
 			if err != nil {
 				return InputPayload{}, err
 			}
-			query[name] = []string{valueSerialized}
+			query[field.Name] = []string{valueSerialized}
 		}
 	}
 
@@ -218,7 +214,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) parse(
 	var result EndpointInput[HeadersType, PathType, QueryType, BodyType]
 
 	// parse headers
-	headerStructInfo, err := AnalyzeStruct(e.Headers)
+	headerStructInfo, err := GetStructInfo(e.Headers)
 	if err != nil {
 		return result, fmt.Errorf("failed to analyze headers: %w", err)
 	}
@@ -328,7 +324,7 @@ type QueryBindings struct {
 
 func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) calcHeaderBindings() HeaderBindings {
 
-	structInfo, err := AnalyzeStruct(e.Headers)
+	structInfo, err := GetStructInfo(e.Headers)
 	if err != nil {
 		panic(fmt.Errorf("failed to analyze headers: %w", err))
 	}

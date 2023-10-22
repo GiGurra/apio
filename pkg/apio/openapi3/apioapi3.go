@@ -106,7 +106,7 @@ func goTypeToOpenapiSchemaRef(t reflect.Type) map[string]any {
 		}
 	case reflect.Struct:
 		// Here we need to do further analysis
-		structInfo, err := apio.AnalyzeStructType(t)
+		structInfo, err := apio.GetStructInfoOfType(t)
 		if err != nil {
 			panic(fmt.Errorf("failed to analyze struct: %v", err))
 		}
@@ -274,7 +274,7 @@ func GetPaths(api apio.Api) map[string]any {
 func GetComponentsOfType(t reflect.Type) map[string]any {
 	switch t.Kind() {
 	case reflect.Struct:
-		structInfo, err := apio.AnalyzeStructType(t)
+		structInfo, err := apio.GetStructInfoOfType(t)
 		if err != nil {
 			panic(fmt.Errorf("failed to analyze struct: %v", err))
 		}
@@ -286,7 +286,7 @@ func GetComponentsOfType(t reflect.Type) map[string]any {
 	}
 }
 
-func GetComponentsOfStruct(structInfo apio.AnalyzedStruct) map[string]any {
+func GetComponentsOfStruct(structInfo apio.StructInfo) map[string]any {
 	schemas := make(map[string]any)
 	if structInfo.HasContent() {
 		props := make(map[string]any)
@@ -316,7 +316,7 @@ func GetComponentsOfApi(api apio.Api) map[string]any {
 
 	schemas := make(map[string]any)
 	for _, e := range api.Endpoints {
-		bodyInfos := []apio.AnalyzedStruct{
+		bodyInfos := []apio.StructInfo{
 			e.GetBodyOutputInfo(),
 			e.GetBodyInputInfo(),
 		}
@@ -333,7 +333,7 @@ func GetComponentsOfApi(api apio.Api) map[string]any {
 	}
 }
 
-func schemaNameOf(structInfo apio.AnalyzedStruct) string {
+func schemaNameOf(structInfo apio.StructInfo) string {
 	pkgParts := strings.Split(structInfo.Pkg, "/")
 	lastPart := pkgParts[len(pkgParts)-1]
 	raw := lastPart + "/" + structInfo.Name

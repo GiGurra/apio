@@ -10,7 +10,7 @@ import (
 
 var cache = sync.Map{}
 
-type AnalyzedField struct {
+type FieldInfo struct {
 	Name         string
 	LKName       string
 	FieldName    string
@@ -22,7 +22,11 @@ type AnalyzedField struct {
 	IsPointer    bool
 }
 
-func (a *AnalyzedField) String() string {
+func (a *FieldInfo) HasFieldNameInStruct() bool {
+	return a.FieldName != ""
+}
+
+func (a *FieldInfo) String() string {
 	result := a.Name + "{\n"
 	result += fmt.Sprintf(" Name: %v\n", a.Name)
 	result += fmt.Sprintf(" LKName: %v\n", a.LKName)
@@ -36,19 +40,19 @@ func (a *AnalyzedField) String() string {
 	return result
 }
 
-func (a *AnalyzedField) IsRequired() bool {
+func (a *FieldInfo) IsRequired() bool {
 	return !a.IsPointer
 }
 
-func (a *AnalyzedField) IsOptional() bool {
+func (a *FieldInfo) IsOptional() bool {
 	return !a.IsRequired()
 }
 
-func (a *AnalyzedField) IsSlice() bool {
+func (a *FieldInfo) IsSlice() bool {
 	return a.Type.Kind() == reflect.Slice
 }
 
-func (a *AnalyzedField) Assign(parentPtr any, valuePtr any) error {
+func (a *FieldInfo) Assign(parentPtr any, valuePtr any) error {
 	parentT := reflect.TypeOf(parentPtr)
 	if parentT.Kind() != reflect.Ptr {
 		return fmt.Errorf("expected pointer, got %v", parentT.Kind())
@@ -68,7 +72,7 @@ func (a *AnalyzedField) Assign(parentPtr any, valuePtr any) error {
 	return nil
 }
 
-func (a *AnalyzedField) GetPtr(parentPtr any) (any, error) {
+func (a *FieldInfo) GetPtr(parentPtr any) (any, error) {
 	parentT := reflect.TypeOf(parentPtr)
 	if parentT.Kind() != reflect.Ptr {
 		return nil, fmt.Errorf("expected pointer, got %v", parentT.Kind())
@@ -88,24 +92,24 @@ func (a *AnalyzedField) GetPtr(parentPtr any) (any, error) {
 	}
 }
 
-type AnalyzedStruct struct {
+type StructInfo struct {
 	Name              string
 	Pkg               string
-	Fields            []AnalyzedField
-	FieldsByFieldName map[string]AnalyzedField
-	FieldsByName      map[string]AnalyzedField
-	FieldsByLKName    map[string]AnalyzedField // lower kebab case
+	Fields            []FieldInfo
+	FieldsByFieldName map[string]FieldInfo
+	FieldsByName      map[string]FieldInfo
+	FieldsByLKName    map[string]FieldInfo // lower kebab case
 }
 
-func (a *AnalyzedStruct) HasContent() bool {
+func (a *StructInfo) HasContent() bool {
 	return len(a.Fields) > 0
 }
 
-func AnalyzeField[Parent any](parent Parent, index int) (AnalyzedField, error) {
-	return AnalyzeFieldType(reflect.TypeOf(parent), index)
+func GetFieldInfo[Parent any](parent Parent, index int) (FieldInfo, error) {
+	return GetFieldInfoOfType(reflect.TypeOf(parent), index)
 }
 
-func AnalyzeFieldType(parentT reflect.Type, index int) (AnalyzedField, error) {
+func GetFieldInfoOfType(parentT reflect.Type, index int) (FieldInfo, error) {
 	structField := parentT.Field(index)
 	fieldType := structField.Type
 	isPointer := fieldType.Kind() == reflect.Ptr
@@ -123,7 +127,7 @@ func AnalyzeFieldType(parentT reflect.Type, index int) (AnalyzedField, error) {
 		valueType = fieldType.Elem()
 	}
 
-	return AnalyzedField{
+	return FieldInfo{
 		Name:         name,
 		LKName:       lkName,
 		FieldName:    structField.Name,
@@ -154,14 +158,14 @@ func camelCaseToKebabCase(in string) string {
 	return strings.ToLower(out)
 }
 
-func AnalyzeStruct[T any](t T) (AnalyzedStruct, error) {
-	return AnalyzeStructType(reflect.TypeOf(t))
+func GetStructInfo[T any](t T) (StructInfo, error) {
+	return GetStructInfoOfType(reflect.TypeOf(t))
 }
-func AnalyzeStructType(tpe reflect.Type) (AnalyzedStruct, error) {
+func GetStructInfoOfType(tpe reflect.Type) (StructInfo, error) {
 
 	// Check that it is a struct
 	if tpe.Kind() != reflect.Struct {
-		return AnalyzedStruct{}, fmt.Errorf("expected struct, got %v", tpe.Kind())
+		return StructInfo{}, fmt.Errorf("expected struct, got %v", tpe.Kind())
 	}
 
 	structPkg := tpe.PkgPath()
@@ -170,35 +174,38 @@ func AnalyzeStructType(tpe reflect.Type) (AnalyzedStruct, error) {
 
 	cached, isCached := cache.Load(fullPath)
 	if isCached {
-		return cached.(AnalyzedStruct), nil
+		return cached.(StructInfo), nil
 	}
 
-	fields := make([]AnalyzedField, 0)
-	fieldsByFieldName := make(map[string]AnalyzedField)
-	fieldsByName := make(map[string]AnalyzedField)
-	fieldsByLKName := make(map[string]AnalyzedField)
+	fields := make([]FieldInfo, 0)
+	fieldsByFieldName := make(map[string]FieldInfo)
+	fieldsByName := make(map[string]FieldInfo)
+	fieldsByLKName := make(map[string]FieldInfo)
 
 	for i := 0; i < tpe.NumField(); i++ {
 		field := tpe.Field(i)
 
-		if field.Name == "_" {
-			continue
-		}
-
-		analyzed, err := AnalyzeFieldType(tpe, i)
+		analyzed, err := GetFieldInfoOfType(tpe, i)
 		if err != nil {
-			return AnalyzedStruct{}, fmt.Errorf("failed to analyze field %v: %v", field.Name, err)
+			return StructInfo{}, fmt.Errorf("failed to analyze field %v: %v", field.Name, err)
 		}
 		fields = append(fields, analyzed)
-		fieldsByFieldName[analyzed.FieldName] = analyzed
-		fieldsByName[analyzed.Name] = analyzed
-		if _, ok := fieldsByLKName[analyzed.LKName]; ok {
-			return AnalyzedStruct{}, fmt.Errorf("duplicate lowercase field name %v", analyzed.Name)
+
+		if analyzed.FieldName != "" && analyzed.FieldName != "_" {
+			fieldsByFieldName[analyzed.FieldName] = analyzed
 		}
-		fieldsByLKName[analyzed.LKName] = analyzed
+		if analyzed.Name != "" && analyzed.Name != "_" {
+			fieldsByName[analyzed.Name] = analyzed
+		}
+		if _, ok := fieldsByLKName[analyzed.LKName]; ok {
+			return StructInfo{}, fmt.Errorf("duplicate lowercase field name %v", analyzed.Name)
+		}
+		if analyzed.LKName != "" && analyzed.LKName != "_" {
+			fieldsByLKName[analyzed.LKName] = analyzed
+		}
 	}
 
-	analyzed := AnalyzedStruct{
+	analyzed := StructInfo{
 		Name:              structName,
 		Pkg:               structPkg,
 		Fields:            fields,
