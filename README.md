@@ -15,7 +15,7 @@ It lets you:
 * Validate your API definition at application startup.
 * Generate an OpenAPI/swagger spec from the API definition.
 
-Without any Go code generation.
+Without any Go code generation (ofc, we generate non-go code, namely the openapi spec).
 
 ## Example
 
