@@ -100,7 +100,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (
 		return InputPayload{}, fmt.Errorf("failed to marshal body: %w", err)
 	}
 
-	serializeValue := func(value reflect.Value) (string, error) {
+	serializeUrlValue := func(value reflect.Value) (string, error) {
 		str, err := json.Marshal(value.Interface())
 		if err != nil {
 			return "", fmt.Errorf("failed to marshal path parameter '%s': %w", value, err)
@@ -127,7 +127,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (
 			if valuePtr == nil {
 				continue
 			}
-			valueSerialized, err := serializeValue(reflect.ValueOf(valuePtr).Elem())
+			valueSerialized, err := serializeUrlValue(reflect.ValueOf(valuePtr).Elem())
 			if err != nil {
 				return InputPayload{}, err
 			}
@@ -157,11 +157,11 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (
 				pathStr += "/" + strings.TrimPrefix(pathTag, "/")
 			}
 		} else {
-			valueSerialized, err := serializeValue(reflect.ValueOf(e.Path).Field(i))
+			valueSerialized, err := serializeUrlValue(reflect.ValueOf(e.Path).Field(i))
 			if err != nil {
 				return InputPayload{}, err
 			}
-			pathStr += "/" + valueSerialized
+			pathStr += "/" + url.PathEscape(valueSerialized)
 			path[field.Name] = valueSerialized
 		}
 	}
@@ -187,7 +187,7 @@ func (e EndpointInput[HeadersType, PathType, QueryType, BodyType]) ToPayload() (
 			if nameOvrd, ok := field.Tag.Lookup("name"); ok {
 				name = nameOvrd
 			}
-			valueSerialized, err := serializeValue(value)
+			valueSerialized, err := serializeUrlValue(value)
 			if err != nil {
 				return InputPayload{}, err
 			}
